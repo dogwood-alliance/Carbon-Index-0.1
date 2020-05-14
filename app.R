@@ -7,6 +7,8 @@
 #    http://shiny.rstudio.com/
 #
 
+
+### library imports
 library(shiny)
 library(DT)
 library(tidyverse)
@@ -14,11 +16,13 @@ library(ggplot2)
 library(shinyWidgets)
 
 
+## read in data 
 data <- read.csv("CIP_Type1_2020-04-07.csv", header=T, na.strings=c("-"))
 head(data)
 str(data)
 
 
+##UI Set Up
 shinyApp(
     ui = fluidPage(
         titlePanel("Forest Carbon Index Project"),
@@ -27,14 +31,17 @@ shinyApp(
                 h3("Let's Get Started!"),
                 br(),
                 selectInput("user_role", "I am a(n):",
-                            c("Concerned Citizen" = "citizen", ## include advocacy materials
-                              "Elected Official" = "politician", ## include sample policies
-                              "Scientist" = "scientist")), ## include data and model outputs
+                            c("Concerned Citizen", ## include advocacy materials
+                              "Elected Official", ## include sample policies
+                              "Scientist")), ## include data and model outputs
                 pickerInput("state", "I live in:",
                             levels(data$State), options=list(`actions-box` = TRUE), multiple = FALSE, selected="Alabama"),
                 
                 sliderInput("slider", "Slider", 1, 100, 50), 
-            ),
+            ), #end sidebar panel
+            
+            
+            
             mainPanel(
                 tabsetPanel(type="tabs", 
                             
@@ -48,8 +55,9 @@ shinyApp(
                              p(strong("Select your info (left) and then click through the tabs (top) to explore your area’s Forest Carbon Index (FCI), identify areas for improvement, and print out a report to help you take action."), style="color:blue;")),
                     
                     tabPanel("State Report",
-                             h3(textOutput("state")),
-                             p("The great state of ", textOutput("justState", inline=T), " has ", textOutput("stTotalAc", inline=T), " acres of forestland."),
+                             h3(textOutput("stateChosenName")),
+                             p("The great state of ", textOutput("justStateName", inline=T), " has ", textOutput("stTotalAc", inline=T), " acres of forestland."),
+                             p(textOutput("userRole")),
                              
                              dataTableOutput("stateTable")
                              
@@ -67,12 +75,28 @@ shinyApp(
         ),
 
     ),
+    
+    
+    
+    
+    
+    
+    ### back end and data stuff
+    
+    
     server = function(input, output) {
-        output$state <- renderText({ 
+        
+        
+        output$userRole <- renderText({
+            paste("I am a(n) ", input$user_role)
+        })
+        
+        
+        output$stateChosenName <- renderText({ 
             paste("State Chosen: ", input$state)
         })
         
-        output$justState <- renderText({input$state})
+        output$justStateName <- renderText({input$state})
         
         stateData <- reactive({
             ##Filter By state
@@ -110,7 +134,7 @@ shinyApp(
         
         output$report <- downloadHandler(
             # For PDF output, change this to "report.pdf"
-            filename = "report.html",
+            filename = "report.pdf",
             content = function(file) {
                 # Copy the report file to a temporary directory before processing it, in
                 # case we don't have write permissions to the current working dir (which
@@ -119,7 +143,7 @@ shinyApp(
                 file.copy("report.Rmd", tempReport, overwrite = TRUE)
                 
                 # Set up parameters to pass to Rmd document
-                params <- list(n = input$slider)
+                params <- list(n = input$slider, stateText = input$state)
                 
                 # Knit the document, passing in the `params` list, and eval it in a
                 # child of the global environment (this isolates the code in the document

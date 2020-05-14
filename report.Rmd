@@ -1,8 +1,9 @@
 ---
 title: "Forest Carbon Index Report"
-output: html_document
+output: pdf_document
 params:
   n: NA
+  stateText: NA
 ---
 
 ```{r}
@@ -13,8 +14,9 @@ params$n
 
 ```
 
-A plot of `params$n` random points.
+A plot of `params$n` random points. State: `params$stateText`
 
 ```{r}
 plot(rnorm(params$n), rnorm(params$n))
+params$stateText
 ```
