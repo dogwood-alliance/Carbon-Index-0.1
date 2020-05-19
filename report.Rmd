@@ -2,21 +2,145 @@
 title: "Forest Carbon Index Report"
 output: pdf_document
 params:
+  data: NA
   n: NA
   stateText: NA
+<<<<<<< HEAD
+  user: NA
+=======
+>>>>>>> 4acb8685a6dc797c0ec619b2d4998780af1b8a63
 ---
 
 ```{r}
 
 # The `params` object is available in the document.
-params$n
+params$stateText
+head(params$data)
 
+```
+The great state of `r params$stateText ` has <<StTotalAc>> total acres of forestland, which store <<StTotalC>> tons of carbon, for a total Forest Carbon Index (FCI) of <<StTotalFCI>>. 
+
+# Forest Types  
+
+`r params$stateText ` has <<StSumFT>> forest types across the state, with <<StMaxFT_AcPerc>>% of acres being <<StMaxAcFT_Name>>. There are only <<StMinAcFT_Ac>> acres of <<StMinAcFT_Name>>. The <<STMaxFT_Name>> has the highest FCI at <<StMaxFT_FCI>> while the <<StMinFT_Name>> has the lowest FCI at <<StMinFT_FCI>>.  Overall, the average FCI in `r params$stateText ` is <<StAvgFCI>>.
+
+
+```{r}
+#Graph: Forest Types Pie Chart by Ac and by tC
+```
+
+<<<<<<< HEAD
+# Fake Forests  
+
+On average, natural forests in `r params$stateText ` store <<StFCNatural - StFCIPlanted>> additional tons of carbon per acre than artificially regenerated forests. Across the state, there are <<StPlantedAc>> acres of plantations, representing <<StPlantedAc>> / <StTotalAc>> % of total forestland.  
+
+If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  <<StMissedCarbon>> = ((<<StPlantedAc>> * <<StNaturalFCI>>) - <<StPlantedC>>) more tons of carbon, equivalent to an additional <<StMissedCarbon>> * 44/12 = CO2e * 0.192608384 passenger vehicles on the road for one year.  
+
+```{r}
+#Graph: Forest Type X Origin, FCI
+```
+# How Does `r params$stateText ` Compare?  
+
+In the fourteen state region of the South, `r params$stateText ` ranks:  
+
+*<<AC Rank>> of 14 in Acres of Forestland  
+
+* <<TC Rank>> of 14 in Tons of Carbon Sequestered in Forestland  
+
+* <<FCI Rank>> of 14 in Forest Carbon Index (FCI)  
+
+Here’s how the forest types of `r params$stateText ` rank against other states:
+
+Table: FCI Value, Forest Type Row, State Column
+
+Table: TC Value, Forest Type Row, State Column
+
+Table: AC Value, Forest Type Row, State Column
+
+# Natural Climate Solutions
+
+## Letting Forests Mature
+
+**WHY**  
+
+Planted forests (plantations) usually have a short “rotation” -- the number of years it takes for them to grow, be cut down, and have the area replanted. In commercial pine plantations, it can be as little as 20-25 years. In contrast, natural forests often remain uncut for longer, naturally store more carbon, and have the potential to transform into old growth forests that support more biodiversity and provide more ecosystem services. 
+
+Every time an acre of forest is harvested, it releases carbon. If that acre is used for bioenergy, the carbon can be emitted in as little as 1-2 years. If that acre is used for more traditional forest products, like paper, pulp, or lumber, 86% of that carbon is emitted within 100 years, with just 14% remaining behind in finished products and landfills. Although plantations are generally intended for commercial harvest, a substantial amount of natural forests also get harvested every year. 
+
+Contrary to common belief, older forests do not stop or significantly slow carbon sequestration. Instead, older forests continue to store carbon well beyond 100 years of age. In fact, the carbon uptake rate is remarkably similar for both younger and older forests. 
+
+**THE PAYOFF**  
+
+Reducing the amount of forest harvest in `r params$stateText ` could improve carbon sequestration and contribute to the state’s natural climate solutions. In the data, this would be observed as allowing more forests to mature to the next age class. We can model this behavior by doing some simple table calculations, and predict what the increase in carbon would be if acres managed to successfully grow into the next age class.
+
+* If the state moved 10% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
+
+* If the state moved 25% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
+
+* If the state moved 50% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
+
+```{r}
+#Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Age Class
+#	Percentage slider 0-100. Takes X % of previous age class and sticks it in the next.
+
+#Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
+```
+## Letting Forests Regenerate Naturally
+
+**WHY**  
+Although planting trees does regenerate the area more quickly, there are lasting effects from those plantings that are seen in carbon sequestration. On average, natural forests in `r params$stateText ` store <<StFCNatural - StFCIPlanted>> additional tons of carbon per acre than artificially regenerated forests. This means that a naturally regenerated forest stand will, as a rule, store more carbon than an artificially regenerated (planted) stand. Beyond carbon benefits, natural regeneration also reduces the amount of pesticides, soil impaction, and water runoff that can occur after a forest harvest. 
+
+**THE PAYOFF**
+Although we cannot choose individual acres, we can see the potential carbon sequestration difference if more acres were naturally instead of artificially regenerated.  
+
+* If the state had 10% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
+
+* If the state had 25% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
+
+* If the state had 50% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
+
+```{r}
+#Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Stand Origin
+#	Percentage slider 0-100. Takes X % of artificial and changes it to natural.
+
+#Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
 
 ```
 
+
+## Risks & Issues  
+
+Changing the status quo always comes with trade-offs. Restricting the ability of the forest products industry to replant in commercially favorable species will be unpopular. However, keep these facts in mind:  
+
+* A **reduction** does not equal an **elimination** of forest products or the forest products industry  
+
+* The more reliant a community is on either export industries or the wood products industry, the more likely it is to suffer from higher levels of poverty and unemployment  
+
+* Forest industry work is dangerous -- logging has the second highest fatality rate of all job categories  
+
+* Forest industry workers are older and not being replaced by younger generations because of issues around job security, self-employment, and danger. 
+
+* Plantations require regular, costly human intervention that is often subsidized by government programs, including repeated thinnings and pesticide applications.  
+
+* Plantations provide substantially less water filtering, wildlife habitat, and carbon sequestration than natural forests.  
+
+We are not legislators, however, we can envision a reduction in forest harvest through taking legislative action such as:  
+
+* Reducing subsidies paid to wood products companies  
+
+* Reducing subsidies in state forest planting programs that clearly favor commercial species  
+
+* Enacting more regulations on logging to improve carbon sequestration, water and air quality, wildlife habitat, canopy retention, and the availability of seed trees for regeneration.  
+
+# Next Steps & Resources 
+
+Do you want to act on this information, but you’re not sure where to go? We’ve got you covered! Here are some links…
+
+=======
 A plot of `params$n` random points. State: `params$stateText`
 
 ```{r}
 plot(rnorm(params$n), rnorm(params$n))
 params$stateText
 ```
+>>>>>>> 4acb8685a6dc797c0ec619b2d4998780af1b8a63
