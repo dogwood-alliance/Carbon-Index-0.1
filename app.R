@@ -70,7 +70,6 @@ shinyApp(
                              )        
                             
                             )
-
             )
         ),
 
@@ -128,8 +127,17 @@ shinyApp(
            
         })
         
-        
-        
+        output$stTotalC <- reactive({
+          format(
+            round(
+              subset(data, 
+                    State %in% input$state &
+                    Stand_Origin %in% "Total" &
+                    Stand_Age %in% "Total" &
+                    Forest.type.group %in% "Total")[,"tC"], #endsubset
+                  0), #endround 
+              big.mark=",")#endformat
+        })
         
         
         output$report <- downloadHandler(
@@ -143,7 +151,11 @@ shinyApp(
                 file.copy("report.Rmd", tempReport, overwrite = TRUE)
                 
                 # Set up parameters to pass to Rmd document
+<<<<<<< HEAD
+                params <- list(data= data, n = input$slider, stateText = input$state, user= input$user_role)
+=======
                 params <- list(n = input$slider, stateText = input$state)
+>>>>>>> 4acb8685a6dc797c0ec619b2d4998780af1b8a63
                 
                 # Knit the document, passing in the `params` list, and eval it in a
                 # child of the global environment (this isolates the code in the document
