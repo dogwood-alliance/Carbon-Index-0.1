@@ -1,31 +1,41 @@
 ---
 title: "Forest Carbon Index Report"
-output: pdf_document
+output: html_document
 params:
-  data: NA
+  data: "CIP_Type1_2020-04-07.csv"
   n: NA
   stateText: NA
-<<<<<<< HEAD
   user: NA
-=======
->>>>>>> 4acb8685a6dc797c0ec619b2d4998780af1b8a63
+  printcode: false
+
 ---
 
-```{r}
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = params$printcode)
+```
+
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(dplyr)
+```
+
+```{r echo= FALSE}
 
 # The `params` object is available in the document.
 params$stateText
 head(params$data)
-
 ```
 The great state of `r params$stateText ` has <<StTotalAc>> total acres of forestland, which store <<StTotalC>> tons of carbon, for a total Forest Carbon Index (FCI) of <<StTotalFCI>>. 
 
 # Forest Types  
+```{r echo= FALSE}
+#stSumFt<- n_distinct(data$Forest.type.group)
+```
 
-`r params$stateText ` has <<StSumFT>> forest types across the state, with <<StMaxFT_AcPerc>>% of acres being <<StMaxAcFT_Name>>. There are only <<StMinAcFT_Ac>> acres of <<StMinAcFT_Name>>. The <<STMaxFT_Name>> has the highest FCI at <<StMaxFT_FCI>> while the <<StMinFT_Name>> has the lowest FCI at <<StMinFT_FCI>>.  Overall, the average FCI in `r params$stateText ` is <<StAvgFCI>>.
+`r params$stateText ` has StSumFt forest types across the state, with <<StMaxFT_AcPerc>>% of acres being <<StMaxAcFT_Name>>. There are only <<StMinAcFT_Ac>> acres of <<StMinAcFT_Name>>. The <<STMaxFT_Name>> has the highest FCI at <<StMaxFT_FCI>> while the <<StMinFT_Name>> has the lowest FCI at <<StMinFT_FCI>>.  Overall, the total FCI in `r params$stateText ` is <<StTotalFCI>>.
 
 
-```{r}
+```{r echo= FALSE}
 #Graph: Forest Types Pie Chart by Ac and by tC
 ```
 
@@ -36,7 +46,7 @@ On average, natural forests in `r params$stateText ` store <<StFCNatural - StFCI
 
 If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  <<StMissedCarbon>> = ((<<StPlantedAc>> * <<StNaturalFCI>>) - <<StPlantedC>>) more tons of carbon, equivalent to an additional <<StMissedCarbon>> * 44/12 = CO2e * 0.192608384 passenger vehicles on the road for one year.  
 
-```{r}
+```{r echo= FALSE}
 #Graph: Forest Type X Origin, FCI
 ```
 # How Does `r params$stateText ` Compare?  
@@ -79,7 +89,7 @@ Reducing the amount of forest harvest in `r params$stateText ` could improve car
 
 * If the state moved 50% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
 
-```{r}
+```{r echo= FALSE}
 #Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Age Class
 #	Percentage slider 0-100. Takes X % of previous age class and sticks it in the next.
 
@@ -99,7 +109,7 @@ Although we cannot choose individual acres, we can see the potential carbon sequ
 
 * If the state had 50% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
 
-```{r}
+```{r echo= FALSE}
 #Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Stand Origin
 #	Percentage slider 0-100. Takes X % of artificial and changes it to natural.
 
@@ -136,11 +146,3 @@ We are not legislators, however, we can envision a reduction in forest harvest t
 
 Do you want to act on this information, but you’re not sure where to go? We’ve got you covered! Here are some links…
 
-=======
-A plot of `params$n` random points. State: `params$stateText`
-
-```{r}
-plot(rnorm(params$n), rnorm(params$n))
-params$stateText
-```
->>>>>>> 4acb8685a6dc797c0ec619b2d4998780af1b8a63
