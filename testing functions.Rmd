@@ -20,8 +20,8 @@ library(cowplot)
 fci.data <- read.csv("CIP_Type1_2020-04-07.csv", header=T, na.strings=c("-"))
 #head(fci.data)
 
-state.data<- subset(fci.data, State== "Tennessee")
-stateText<- "Tennessee"
+state.data<- subset(fci.data, State== "Kentucky")
+stateText<- "Kentucky"
 head(state.data)
 ```
 # totals values
@@ -94,19 +94,22 @@ subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" &
   stSumFt<- as.numeric(n_distinct(state.data$Forest.type.group))
         
   stMaxAcFT_Ac<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
-        Forest.type.group!= "Total") %>% select(ac) %>% max()
+        Forest.type.group!= "Total") %>% select(ac) %>% max() #%>% format(big.mark=",") 
   
   StMaxFT_FCI<- as.numeric(subset(state.data$tC_ac, state.data$ac== stMaxAcFT_Ac)[1])
     
   stMaxAcFT_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMaxAcFT_Ac)[1])
     
   stMinAcFT_Ac<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
-        Forest.type.group!= "Total") %>% select(ac) %>% min() %>% format(big.mark=",")
+        Forest.type.group!= "Total") %>% select(ac) %>% min() #%>% format(big.mark=",")
     
   stMinAcFT_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMinAcFT_Ac)[1])
     
   stMinFT_FCI<- as.numeric(subset(state.data$tC_ac, state.data$ac== stMinAcFT_Ac)[1])
   
+  stMaxAcFT_Name
+  
+  stMaxAcFT_Ac
 ```
 # Fake Forests
 ```{r}
@@ -124,6 +127,26 @@ stPlantedC<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" &
 
 stMissedCarbon<- (stPlantedAc * stFCINatural)- stPlantedC
 ```
+Bar Graphs
+```{r}
+ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total")
+#ft.data
+fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Stand_Origin)) +
+  geom_col(position= position_dodge(), na.rm= TRUE) + 
+  ggtitle("FCI per Forest Type Group") +
+  labs(x= "Forest Type Group", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
+  geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=2) +
+  scale_fill_manual(values= c("#348045", "#B3DCBC")) + theme_minimal() +
+  theme(
+    plot.title= element_text(size= 20, face= "bold"),
+    axis.text.x= element_text(angle= 45, size= 8, vjust= .95, hjust= .95),
+    axis.title= element_text(size= 14))
+  
+fake.forests.bar
+
+```
+
+
 # Comparison
 ```{r}
 ACrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
@@ -136,6 +159,12 @@ FCIrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Fore
     "Total") %>% select(tC_ac, State) %>% arrange((desc(tC_ac))) %>% pull(State) %in% stateText %>% which 
 
 ```
+Here’s how the forest types of `r params$stateText ` rank against other states:
+```{r}
+
+```
+
+
 #Maturing and Regenerating Forests
 ```{r}
 

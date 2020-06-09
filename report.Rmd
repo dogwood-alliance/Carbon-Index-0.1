@@ -1,8 +1,6 @@
 ---
 title: "Forest Carbon Index Report"
 output: html_document
-  fig_width: 6
-  fig_height: 4
 params:
   data: NA
   n: NA
@@ -24,16 +22,40 @@ library(ggplot2)
 ```{r echo= FALSE}
 #subsetting data based on state picked
 state.data<- subset(params$data, State == params$stateText)
+
+stTotalAc <- format( round( subset(state.data,
+                      Stand_Origin %in% "Total" &
+                      Stand_Age %in% "Total" &
+                      Forest.type.group %in% "Total")[,"ac"], #endsubset
+                    0), #endround 
+                big.mark=",")
+
+stTotalC <- format( round( subset(state.data, 
+                    Stand_Origin %in% "Total" &
+                    Stand_Age %in% "Total" &
+                    Forest.type.group %in% "Total")[,"tC"], #endsubset
+                  0), #endround 
+              big.mark=",")
+
+stTotalFCI <- subset(state.data, 
+                               Stand_Origin %in% "Total" &
+                               Stand_Age %in% "Total" &
+                               Forest.type.group %in% "Total")[,"tC_ac"]
+            
 ```
+## `r params$stateText `  
 
-The great state of `r params$stateText ` has <<StTotalAc>> total acres of forestland, which store <<StTotalC>> tons of carbon, for a total Forest Carbon Index (FCI) of <<StTotalFCI>>. 
 
-# Forest Types  
+The great state of `r params$stateText ` has `r stTotalAc` total acres of forestland, which store `r stTotalC` tons of carbon, for a total Forest Carbon Index (FCI) of `r stTotalFCI`. 
+
+## Forest Types  
 ```{r echo= FALSE}
 stSumFt<- as.numeric(n_distinct(state.data$Forest.type.group))
 
 stMaxAc_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
-        Forest.type.group!= "Total") %>% select(ac) %>% max() %>% format(big.mark=",")
+        Forest.type.group!= "Total") %>% select(ac) %>% max() 
+
+formatted_MaxAc<- format(stMaxAc_FT, big.mark = ",")
 
 stMaxAc_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMaxAc_FT)[1])
 
@@ -41,10 +63,15 @@ stMaxFCI_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" &
         Forest.type.group!= "Total") %>% select(tC_ac) %>% max()
 
 stMaxFCI_Name<- as.character(subset(state.data$Forest.type.group, state.data$tC_ac== stMaxFCI_FT)[1])
-    
+```
+
+
+```{r echo= FALSE}
 stMinAc_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
-        Forest.type.group!= "Total") %>% select(ac) %>% min() %>% format(big.mark=",")
+        Forest.type.group!= "Total") %>% select(ac) %>% min() 
     
+formatted_MinAc<- format(stMinAc_FT, big.mark=",")
+
 stMinAc_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMinAc_FT)[1])
     
 stMinFCI_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
@@ -55,10 +82,10 @@ stMinFCI_Name<- as.character(subset(state.data$Forest.type.group, state.data$tC_
 stTotalFCI <- format(subset(state.data, Stand_Origin== "Total" & Stand_Age=="Total" & Forest.type.group== "Total")[,"tC_ac"], big.mark=",")
 ```
 
-`r params$stateText ` has `r stSumFt` forest types across the state, with `r stMaxAc_FT` acres being of the `r stMaxAc_Name`. There are only `r stMinAc_FT` acres of the `r stMinAc_Name`. The `r stMaxFCI_Name` has the highest FCI at `r stMaxFCI_FT` while the `r stMinFCI_Name` has the lowest FCI at `r stMinFCI_FT`.  Overall, the total FCI in `r params$stateText ` is `r stTotalFCI `.
+`r params$stateText ` has `r stSumFt` forest types across the state, with `r formatted_MaxAc` acres being of the `r stMaxAc_Name`. There are only `r formatted_MinAc` acres of the `r stMinAc_Name`. The `r stMaxFCI_Name` has the highest FCI at `r stMaxFCI_FT` while the `r stMinFCI_Name` has the lowest FCI at `r stMinFCI_FT`.  Overall, the total FCI in `r params$stateText ` is `r stTotalFCI `.
 
 
-```{r echo= FALSE}
+```{r echo= FALSE, fig.width= 6, fig.height= 4}
 ##subsetting data to include only Totals values
 totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
         Forest.type.group!= "Total") 
@@ -81,24 +108,76 @@ ft.tC.pie
 ```
 
 
-# Fake Forests  
+## Fake Forests  
+```{r}
+stFCINatural<- subset(state.data, Stand_Origin== "Natural" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "tC_ac"]
 
-On average, natural forests in `r params$stateText ` store <<StFCNatural - StFCIPlanted>> additional tons of carbon per acre than artificially regenerated forests. Across the state, there are <<StPlantedAc>> acres of plantations, representing <<StPlantedAc>> / <StTotalAc>> % of total forestland.  
+stFCIPlanted<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "tC_ac"]
 
-If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  <<StMissedCarbon>> = ((<<StPlantedAc>> * <<StNaturalFCI>>) - <<StPlantedC>>) more tons of carbon, equivalent to an additional <<StMissedCarbon>> * 44/12 = CO2e * 0.192608384 passenger vehicles on the road for one year.  
+stPlantedAc<-subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "ac"]
+
+formatted_PlantedAc<- format(stPlantedAc, big.mark = ",")
+
+stPlantedC<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "tC"]
+
+stMissedCarbon<- format(((stPlantedAc * stFCINatural)- stPlantedC), big.mark = ",")
+
+additional<- stFCINatural - stFCIPlanted
+
+totalAc<- subset(state.data, Stand_Origin %in% "Total" &
+                      Stand_Age %in% "Total" &
+                      Forest.type.group %in% "Total")[,"ac"]
+
+percentage<- round((stPlantedAc/totalAc)*100, 0)
+
+#cars<- stMissedCarbon
+```
+
+On average, natural forests in `r params$stateText ` store `r additional` additional tons of carbon per acre than artificially regenerated forests. Across the state, there are `r formatted_PlantedAc` acres of plantations, representing `r percentage`% of total forestland.  
+
+If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  `r stMissedCarbon` more tons of carbon, equivalent to an additional <<StMissedCarbon * 44/12 = CO2e * 0.192608384>> passenger vehicles on the road for one year.   
 
 ```{r echo= FALSE}
-#Graph: Forest Type X Origin, FCI
+ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total")
+
+fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Stand_Origin)) +
+  geom_col(position= position_dodge(), na.rm= TRUE) + 
+  ggtitle("FCI per Forest Type Group") +
+  labs(x= "Forest Type Group", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
+  geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=2) +
+  scale_fill_manual(values= c("#348045", "#B3DCBC")) + theme_minimal() +
+  theme(
+    plot.title= element_text(size= 20, face= "bold"),
+    axis.text.x= element_text(angle= 45, size= 8, vjust= .95, hjust= .95),
+    axis.title= element_text(size= 14))
+
+fake.forests.bar
 ```
-# How Does `r params$stateText ` Compare?  
 
-In the fourteen state region of the South, `r params$stateText ` ranks:  
+## How Does `r params$stateText ` Compare?  
 
-*<<AC Rank>> of 14 in Acres of Forestland  
+```{r}
+ACrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total") %>% arrange((desc(ac))) %>% pull(State) %in% params$stateText %>% which 
 
-* <<TC Rank>> of 14 in Tons of Carbon Sequestered in Forestland  
+TCrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total") %>% select(tC, State) %>% arrange((desc(tC))) %>% pull(State) %in% params$stateText %>% which 
 
-* <<FCI Rank>> of 14 in Forest Carbon Index (FCI)  
+FCIrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total") %>% select(tC_ac, State) %>% arrange((desc(tC_ac))) %>% pull(State) %in% params$stateText %>% which 
+```
+
+In the fourteen state region of the South, `r params$stateText ` ranks:   
+  
+* `r ACrank` of 14 in Acres of Forestland   
+
+* `r TCrank` of 14 in Tons of Carbon Sequestered in Forestland  
+
+* `r FCIrank` of 14 in Forest Carbon Index (FCI)  
 
 Here’s how the forest types of `r params$stateText ` rank against other states:
 
@@ -108,9 +187,9 @@ Table: TC Value, Forest Type Row, State Column
 
 Table: AC Value, Forest Type Row, State Column
 
-# Natural Climate Solutions
+## Natural Climate Solutions
 
-## Letting Forests Mature
+### Letting Forests Mature
 
 **WHY**  
 
@@ -136,10 +215,10 @@ Reducing the amount of forest harvest in `r params$stateText ` could improve car
 
 #Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
 ```
-## Letting Forests Regenerate Naturally
+### Letting Forests Regenerate Naturally
 
 **WHY**  
-Although planting trees does regenerate the area more quickly, there are lasting effects from those plantings that are seen in carbon sequestration. On average, natural forests in `r params$stateText ` store <<StFCNatural - StFCIPlanted>> additional tons of carbon per acre than artificially regenerated forests. This means that a naturally regenerated forest stand will, as a rule, store more carbon than an artificially regenerated (planted) stand. Beyond carbon benefits, natural regeneration also reduces the amount of pesticides, soil impaction, and water runoff that can occur after a forest harvest. 
+Although planting trees does regenerate the area more quickly, there are lasting effects from those plantings that are seen in carbon sequestration. On average, natural forests in `r params$stateText ` store `r additional` additional tons of carbon per acre than artificially regenerated forests. This means that a naturally regenerated forest stand will, as a rule, store more carbon than an artificially regenerated (planted) stand. Beyond carbon benefits, natural regeneration also reduces the amount of pesticides, soil impaction, and water runoff that can occur after a forest harvest. 
 
 **THE PAYOFF**
 Although we cannot choose individual acres, we can see the potential carbon sequestration difference if more acres were naturally instead of artificially regenerated.  
@@ -159,7 +238,7 @@ Although we cannot choose individual acres, we can see the potential carbon sequ
 ```
 
 
-## Risks & Issues  
+### Risks & Issues  
 
 Changing the status quo always comes with trade-offs. Restricting the ability of the forest products industry to replant in commercially favorable species will be unpopular. However, keep these facts in mind:  
 
@@ -183,7 +262,7 @@ We are not legislators, however, we can envision a reduction in forest harvest t
 
 * Enacting more regulations on logging to improve carbon sequestration, water and air quality, wildlife habitat, canopy retention, and the availability of seed trees for regeneration.  
 
-# Next Steps & Resources 
+## Next Steps & Resources 
 
 Do you want to act on this information, but you’re not sure where to go? We’ve got you covered! Here are some links…
 
