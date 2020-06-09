@@ -166,6 +166,7 @@ shinyApp(
                            Forest.type.group %in% "Total")[,"tC_ac"], #endsubset
                 0) #endround 
         })
+
         output$report <- downloadHandler(
             # For PDF output, change this to "report.pdf"
             filename = "report.html",

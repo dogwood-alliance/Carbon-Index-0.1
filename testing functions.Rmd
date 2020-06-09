@@ -27,6 +27,7 @@ head(state.data)
 # totals values
 ```{r}
  #stTotal Ac finds the total acreage value in the dataframe for selected state
+
         stTotalAc <- format(
                 round(
                     subset(fci.data, 
@@ -83,6 +84,8 @@ ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
 ft.ac.pie
 ft.tC.pie
 #plot_grid(ft.ac.pie, ft.tC.pie, ncol=1)
+subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
+        Forest.type.group!= "Total")
 ```
 
 ```{r}
@@ -104,7 +107,6 @@ ft.tC.pie
     
   stMinFT_FCI<- as.numeric(subset(state.data$tC_ac, state.data$ac== stMinAcFT_Ac)[1])
   
-stMaxAcFT_Name
 ```
 # Fake Forests
 ```{r}

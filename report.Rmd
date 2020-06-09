@@ -25,6 +25,7 @@ library(ggplot2)
 #subsetting data based on state picked
 state.data<- subset(params$data, State == params$stateText)
 ```
+
 The great state of `r params$stateText ` has <<StTotalAc>> total acres of forestland, which store <<StTotalC>> tons of carbon, for a total Forest Carbon Index (FCI) of <<StTotalFCI>>. 
 
 # Forest Types  
