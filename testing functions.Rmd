@@ -1,0 +1,140 @@
+---
+title: "testing functions"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(viridis)
+library(cowplot)
+```
+
+# load data
+```{r}
+fci.data <- read.csv("CIP_Type1_2020-04-07.csv", header=T, na.strings=c("-"))
+#head(fci.data)
+
+state.data<- subset(fci.data, State== "Tennessee")
+stateText<- "Tennessee"
+head(state.data)
+```
+# totals values
+```{r}
+ #stTotal Ac finds the total acreage value in the dataframe for selected state
+        stTotalAc <- format(
+                round(
+                    subset(fci.data, 
+                      State %in% input$state &
+                      Stand_Origin %in% "Total" &
+                      Stand_Age %in% "Total" &
+                      Forest.type.group %in% "Total")[,"ac"], #endsubset
+                    0), #endround 
+                big.mark=",")#endformat
+          
+        #stTotalC finds the total carbon stored value in the dataframe for selected state
+        stTotalC <- format(
+            round(
+              subset(fci.data, 
+                    State %in% input$state &
+                    Stand_Origin %in% "Total" &
+                    Stand_Age %in% "Total" &
+                    Forest.type.group %in% "Total")[,"tC"], #endsubset
+                  0), #endround 
+              big.mark=",")#endformat
+        
+        #stTotalFCI finds the total forest carbon index value in the dataframe for selected state
+        stTotalFCI <- format(
+                round(
+                    subset(fci.data, 
+                           State %in% input$state &
+                               Stand_Origin %in% "Total" &
+                               Stand_Age %in% "Total" &
+                               Forest.type.group %in% "Total")[,"tC_ac"], #endsubset
+                    0), #endround 
+                big.mark=",")#endformat
+            
+
+```
+
+# Forest Type Values
+```{r}
+totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
+        Forest.type.group!= "Total") 
+#Pie charts of acreage and tons of carbon by forest type
+
+ft.ac.pie<- ggplot(totals.data, aes(x="", y= ac, fill= Forest.type.group)) +
+  geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
+  labs(title= "Acreage per forest type", fill= "Forest Type") +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_void()
+
+ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
+  geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
+  labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_void()
+
+ft.ac.pie
+ft.tC.pie
+#plot_grid(ft.ac.pie, ft.tC.pie, ncol=1)
+```
+
+```{r}
+#stSumFt finds the number of different forest types in a selected state
+
+  stSumFt<- as.numeric(n_distinct(state.data$Forest.type.group))
+        
+  stMaxAcFT_Ac<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
+        Forest.type.group!= "Total") %>% select(ac) %>% max()
+  
+  StMaxFT_FCI<- as.numeric(subset(state.data$tC_ac, state.data$ac== stMaxAcFT_Ac)[1])
+    
+  stMaxAcFT_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMaxAcFT_Ac)[1])
+    
+  stMinAcFT_Ac<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
+        Forest.type.group!= "Total") %>% select(ac) %>% min() %>% format(big.mark=",")
+    
+  stMinAcFT_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMinAcFT_Ac)[1])
+    
+  stMinFT_FCI<- as.numeric(subset(state.data$tC_ac, state.data$ac== stMinAcFT_Ac)[1])
+  
+stMaxAcFT_Name
+```
+# Fake Forests
+```{r}
+stFCINatural<- subset(state.data, Stand_Origin== "Natural" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "tC_ac"]
+
+stFCIPlanted<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "tC_ac"]
+
+stPlantedAc<-subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "ac"]
+
+stPlantedC<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "tC"]
+
+stMissedCarbon<- (stPlantedAc * stFCINatural)- stPlantedC
+```
+# Comparison
+```{r}
+ACrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total") %>% arrange((desc(ac))) %>% pull(State) %in% stateText %>% which 
+
+TCrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total") %>% select(tC, State) %>% arrange((desc(tC))) %>% pull(State) %in% stateText %>% which 
+
+FCIrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total") %>% select(tC_ac, State) %>% arrange((desc(tC_ac))) %>% pull(State) %in% stateText %>% which 
+
+```
+#Maturing and Regenerating Forests
+```{r}
+
+```

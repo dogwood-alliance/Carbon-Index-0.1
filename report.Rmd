@@ -1,42 +1,92 @@
 ---
 title: "Forest Carbon Index Report"
-output: pdf_document
+output: html_document
+  fig_width: 6
+  fig_height: 4
 params:
   data: NA
   n: NA
   stateText: NA
-<<<<<<< HEAD
   user: NA
-=======
->>>>>>> 4acb8685a6dc797c0ec619b2d4998780af1b8a63
+  printcode: false
 ---
 
-```{r}
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = params$printcode, scipen=999)
+```
 
-# The `params` object is available in the document.
-params$stateText
-head(params$data)
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
 
+```{r echo= FALSE}
+#subsetting data based on state picked
+state.data<- subset(params$data, State == params$stateText)
 ```
 The great state of `r params$stateText ` has <<StTotalAc>> total acres of forestland, which store <<StTotalC>> tons of carbon, for a total Forest Carbon Index (FCI) of <<StTotalFCI>>. 
 
 # Forest Types  
+```{r echo= FALSE}
+stSumFt<- as.numeric(n_distinct(state.data$Forest.type.group))
 
-`r params$stateText ` has <<StSumFT>> forest types across the state, with <<StMaxFT_AcPerc>>% of acres being <<StMaxAcFT_Name>>. There are only <<StMinAcFT_Ac>> acres of <<StMinAcFT_Name>>. The <<STMaxFT_Name>> has the highest FCI at <<StMaxFT_FCI>> while the <<StMinFT_Name>> has the lowest FCI at <<StMinFT_FCI>>.  Overall, the average FCI in `r params$stateText ` is <<StAvgFCI>>.
+stMaxAc_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
+        Forest.type.group!= "Total") %>% select(ac) %>% max() %>% format(big.mark=",")
 
+stMaxAc_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMaxAc_FT)[1])
 
-```{r}
-#Graph: Forest Types Pie Chart by Ac and by tC
+stMaxFCI_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
+        Forest.type.group!= "Total") %>% select(tC_ac) %>% max()
+
+stMaxFCI_Name<- as.character(subset(state.data$Forest.type.group, state.data$tC_ac== stMaxFCI_FT)[1])
+    
+stMinAc_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
+        Forest.type.group!= "Total") %>% select(ac) %>% min() %>% format(big.mark=",")
+    
+stMinAc_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMinAc_FT)[1])
+    
+stMinFCI_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
+        Forest.type.group!= "Total") %>% select(tC_ac) %>% min()
+
+stMinFCI_Name<- as.character(subset(state.data$Forest.type.group, state.data$tC_ac== stMinFCI_FT)[1])
+
+stTotalFCI <- format(subset(state.data, Stand_Origin== "Total" & Stand_Age=="Total" & Forest.type.group== "Total")[,"tC_ac"], big.mark=",")
 ```
 
-<<<<<<< HEAD
+`r params$stateText ` has `r stSumFt` forest types across the state, with `r stMaxAc_FT` acres being of the `r stMaxAc_Name`. There are only `r stMinAc_FT` acres of the `r stMinAc_Name`. The `r stMaxFCI_Name` has the highest FCI at `r stMaxFCI_FT` while the `r stMinFCI_Name` has the lowest FCI at `r stMinFCI_FT`.  Overall, the total FCI in `r params$stateText ` is `r stTotalFCI `.
+
+
+```{r echo= FALSE}
+##subsetting data to include only Totals values
+totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
+        Forest.type.group!= "Total") 
+
+#Pie charts of acreage and tons of carbon by forest type
+ft.ac.pie<- ggplot(totals.data, aes(x="", y= ac, fill= Forest.type.group)) +
+  geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
+  labs(title= "Acreage per forest type", fill= "Forest Type") +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_void()
+
+ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
+  geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
+  labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_void()
+
+ft.ac.pie
+ft.tC.pie
+```
+
+
 # Fake Forests  
 
 On average, natural forests in `r params$stateText ` store <<StFCNatural - StFCIPlanted>> additional tons of carbon per acre than artificially regenerated forests. Across the state, there are <<StPlantedAc>> acres of plantations, representing <<StPlantedAc>> / <StTotalAc>> % of total forestland.  
 
 If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  <<StMissedCarbon>> = ((<<StPlantedAc>> * <<StNaturalFCI>>) - <<StPlantedC>>) more tons of carbon, equivalent to an additional <<StMissedCarbon>> * 44/12 = CO2e * 0.192608384 passenger vehicles on the road for one year.  
 
-```{r}
+```{r echo= FALSE}
 #Graph: Forest Type X Origin, FCI
 ```
 # How Does `r params$stateText ` Compare?  
@@ -79,7 +129,7 @@ Reducing the amount of forest harvest in `r params$stateText ` could improve car
 
 * If the state moved 50% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
 
-```{r}
+```{r echo= FALSE}
 #Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Age Class
 #	Percentage slider 0-100. Takes X % of previous age class and sticks it in the next.
 
@@ -99,7 +149,7 @@ Although we cannot choose individual acres, we can see the potential carbon sequ
 
 * If the state had 50% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
 
-```{r}
+```{r echo= FALSE}
 #Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Stand Origin
 #	Percentage slider 0-100. Takes X % of artificial and changes it to natural.
 
@@ -136,11 +186,3 @@ We are not legislators, however, we can envision a reduction in forest harvest t
 
 Do you want to act on this information, but you’re not sure where to go? We’ve got you covered! Here are some links…
 
-=======
-A plot of `params$n` random points. State: `params$stateText`
-
-```{r}
-plot(rnorm(params$n), rnorm(params$n))
-params$stateText
-```
->>>>>>> 4acb8685a6dc797c0ec619b2d4998780af1b8a63

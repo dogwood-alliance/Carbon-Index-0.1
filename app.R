@@ -12,6 +12,7 @@
 library(shiny)
 library(DT)
 library(tidyverse)
+library(dplyr)
 library(ggplot2)
 library(shinyWidgets)
 
@@ -74,22 +75,15 @@ shinyApp(
         ),
 
     ),
-    
-    
-    
-    
-    
-    
+
     ### back end and data stuff
     
     
-    server = function(input, output) {
-        
+    server = function(input, output){
         
         output$userRole <- renderText({
             paste("I am a(n) ", input$user_role)
         })
-        
         
         output$stateChosenName <- renderText({ 
             paste("State Chosen: ", input$state)
@@ -99,21 +93,17 @@ shinyApp(
         
         stateData <- reactive({
             ##Filter By state
-            
             data <- subset(
                 data,
                 State %in% input$state
             )
-            
             data
         })
         
         output$stateTable <- renderDataTable({
             datatable(stateData())
         })
-        
-        
-        
+        #stTotal Ac finds the total acreage value in the dataframe for selected state
         output$stTotalAc <- reactive({
             format(
                 round(
@@ -126,7 +116,7 @@ shinyApp(
                 big.mark=",")#endformat
            
         })
-        
+        #stTotalC finds the total carbon stored value in the dataframe for selected state
         output$stTotalC <- reactive({
           format(
             round(
@@ -139,10 +129,46 @@ shinyApp(
               big.mark=",")#endformat
         })
         
+        #stTotalFCI finds the total forest carbon index value in the dataframe for selected state
+        output$stTotalFCI <- reactive({
+            format(
+                round(
+                    subset(data, 
+                           State %in% input$state &
+                               Stand_Origin %in% "Total" &
+                               Stand_Age %in% "Total" &
+                               Forest.type.group %in% "Total")[,"tC_ac"], #endsubset
+                    0), #endround 
+                big.mark=",")#endformat
+            
+        })
+        #stSumFt finds the number of different forest types in a selected state
+        output$stSumFt<- reactive({
+            n_distinct(stateData$Forest.type.group)
+        })    
         
+        output$stFCINatural<- reactive({
+            round(
+                subset(data, 
+                       State %in% input$state &
+                           Stand_Origin %in% "Natural" &
+                           Stand_Age %in% "Total" &
+                           Forest.type.group %in% "Total")[,"tC_ac"], #endsubset
+                0) #endround 
+        })
+        
+        output$stFCIPlanted<- reactive({
+            round(
+                subset(data, 
+                       State %in% input$state &
+                           Stand_Origin %in% "Planted" &
+                           Stand_Age %in% "Total" &
+                           Forest.type.group %in% "Total")[,"tC_ac"], #endsubset
+                0) #endround 
+        })
         output$report <- downloadHandler(
             # For PDF output, change this to "report.pdf"
-            filename = "report.pdf",
+            filename = "report.html",
             content = function(file) {
                 # Copy the report file to a temporary directory before processing it, in
                 # case we don't have write permissions to the current working dir (which
@@ -151,19 +177,14 @@ shinyApp(
                 file.copy("report.Rmd", tempReport, overwrite = TRUE)
                 
                 # Set up parameters to pass to Rmd document
-<<<<<<< HEAD
                 params <- list(data= data, n = input$slider, stateText = input$state, user= input$user_role)
-=======
-                params <- list(n = input$slider, stateText = input$state)
->>>>>>> 4acb8685a6dc797c0ec619b2d4998780af1b8a63
                 
                 # Knit the document, passing in the `params` list, and eval it in a
                 # child of the global environment (this isolates the code in the document
                 # from the code in this app).
                 rmarkdown::render(tempReport, output_file = file,
                                   params = params,
-                                  envir = new.env(parent = globalenv())
-                )
+                                  envir = new.env(parent = globalenv()) )
             }
         )
     }
