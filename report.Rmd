@@ -107,9 +107,20 @@ ft.ac.pie
 ft.tC.pie
 ```
 
+```{r echo= FALSE}
+if (params$user== "Scientist"){
+  totals.table<- totals.data %>% select(-c(Stand_Age, Stand_Origin, State)) %>% arrange((desc(tC))) %>%
+  rename("Forest Type"= Forest.type.group, "Carbon Stored (tons)"= tC, "Acreage"= ac, "Forest Carbon Index"= 
+  tC_ac) %>% datatable()
+} else{
+  totals.table<- ""
+}
+totals.table
+```
+
 
 ## Fake Forests  
-```{r}
+```{r echo= FALSE}
 stFCINatural<- subset(state.data, Stand_Origin== "Natural" & Stand_Age== "Total" & Forest.type.group== 
     "Total")[, "tC_ac"]
 
@@ -134,18 +145,26 @@ totalAc<- subset(state.data, Stand_Origin %in% "Total" &
 
 percentage<- round((stPlantedAc/totalAc)*100, 0)
 
-#cars<- stMissedCarbon
+cars<- format((((stPlantedAc * stFCINatural)- stPlantedC)*(44/12) * 0.192608384), big.mark = ",")
 ```
 
 On average, natural forests in `r params$stateText ` store `r additional` additional tons of carbon per acre than artificially regenerated forests. Across the state, there are `r formatted_PlantedAc` acres of plantations, representing `r percentage`% of total forestland.  
 
-If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  `r stMissedCarbon` more tons of carbon, equivalent to an additional <<StMissedCarbon * 44/12 = CO2e * 0.192608384>> passenger vehicles on the road for one year.   
+If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  `r stMissedCarbon` more tons of carbon, equivalent to an additional `r cars` passenger vehicles on the road for one year. 
+
+```{r echo= FALSE}
+if (params$user== "Scientist"){
+  cat("*The conversion factor from tons of carbon to passenger vehicles was taken directy from the EPA's Greenhouse Gas Equivalencies Calculator, which can be found here: https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator", "\n", "Thus, the amount of passenger vehicles equal to the amount of additional carbon that would have been stored if the planted forests were of natural origin was calculated as follows: ", "\n", stMissedCarbon, " x 44/12 x 0.192608384")
+}
+```
+
 
 ```{r echo= FALSE}
 ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total")
+ft.data[is.na(ft.data)]<-0 
 
 fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Stand_Origin)) +
-  geom_col(position= position_dodge(), na.rm= TRUE) + 
+  geom_col(position= position_dodge()) + 
   ggtitle("FCI per Forest Type Group") +
   labs(x= "Forest Type Group", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
   geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=2) +
@@ -158,16 +177,27 @@ fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Sta
 fake.forests.bar
 ```
 
+```{r echo= FALSE}
+if (params$user== "Scientist"){
+  ft.table<- ft.data %>% select(-c(State, Stand_Age, tC, ac)) %>% arrange(Stand_Origin, desc(tC_ac)) %>% 
+  rename("Forest Type"= Forest.type.group, "Forest Carbon Index"= tC_ac, "Stand Origin"= Stand_Origin) %>%  
+  datatable()
+} else{
+  ft.table<- ""
+}
+ft.table
+```
+
 ## How Does `r params$stateText ` Compare?  
 
-```{r}
-ACrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+```{r echo=FALSE}
+ACrank<- subset(data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% arrange((desc(ac))) %>% pull(State) %in% params$stateText %>% which 
 
-TCrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+TCrank<- subset(data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% select(tC, State) %>% arrange((desc(tC))) %>% pull(State) %in% params$stateText %>% which 
 
-FCIrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+FCIrank<- subset(data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% select(tC_ac, State) %>% arrange((desc(tC_ac))) %>% pull(State) %in% params$stateText %>% which 
 ```
 

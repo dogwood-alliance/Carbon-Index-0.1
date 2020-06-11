@@ -72,20 +72,25 @@ totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" &
 ft.ac.pie<- ggplot(totals.data, aes(x="", y= ac, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
   labs(title= "Acreage per forest type", fill= "Forest Type") +
-  scale_fill_viridis(discrete = TRUE) +
+  #scale_fill_viridis(discrete = TRUE) +
   theme_void()
 
 ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
   labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
-  scale_fill_viridis(discrete = TRUE) +
+  #scale_fill_viridis(discrete = TRUE) +
   theme_void()
 
 ft.ac.pie
 ft.tC.pie
 #plot_grid(ft.ac.pie, ft.tC.pie, ncol=1)
-subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
-        Forest.type.group!= "Total")
+
+```
+```{r}
+totals.table<- totals.data %>% select(-c(Stand_Age, Stand_Origin, State)) %>% arrange((desc(tC))) %>%
+  rename("Forest Type"= Forest.type.group, "Carbon Stored (tons)"= tC, "Acreage"= ac, "Forest Carbon Index"= 
+  tC_ac) %>% datatable()
+totals.table
 ```
 
 ```{r}
@@ -130,6 +135,7 @@ stMissedCarbon<- (stPlantedAc * stFCINatural)- stPlantedC
 Bar Graphs
 ```{r}
 ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total")
+ft.data[is.na(ft.data)]<-0 
 #ft.data
 fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Stand_Origin)) +
   geom_col(position= position_dodge(), na.rm= TRUE) + 
@@ -145,6 +151,16 @@ fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Sta
 fake.forests.bar
 
 ```
+```{r}
+  totals.table<- totals.data %>% select(-c(Stand_Age, Stand_Origin, State)) %>% arrange((desc(tC))) %>%
+  rename("Forest Type"= Forest.type.group, "Carbon Stored (tons)"= tC, "Acreage"= ac, "Forest Carbon Index"= 
+  tC_ac) %>% datatable()
+#ft.data
+ft.table<- ft.data %>% select(-c(State, Stand_Age, tC, ac)) %>% arrange(Stand_Origin, desc(tC_ac)) %>% 
+  rename("Forest Type"= Forest.type.group, "Forest Carbon Index"= tC_ac, "Stand Origin"= Stand_Origin) %>%  
+  datatable()
+ft.table
+```
 
 
 # Comparison
@@ -157,6 +173,11 @@ TCrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Fores
 
 FCIrank<- subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% select(tC_ac, State) %>% arrange((desc(tC_ac))) %>% pull(State) %in% stateText %>% which 
+
+ACtable<-subset(fci.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total") %>% arrange((desc(ac))) %>% select(State, ac)
+
+ACtable
 
 ```
 Here’s how the forest types of `r params$stateText ` rank against other states:
