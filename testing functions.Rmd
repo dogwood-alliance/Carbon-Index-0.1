@@ -13,52 +13,42 @@ library(dplyr)
 library(ggplot2)
 library(viridis)
 library(cowplot)
+library(modelr)
 ```
 
 # load data
 ```{r}
 fci.data <- read.csv("CIP_Type1_2020-04-07.csv", header=T, na.strings=c("-"))
+fci.data$ac<- as.numeric(as.character(fci.data$ac))
+fci.data$tC<- as.numeric(as.character(fci.data$tC))
 #head(fci.data)
 
-state.data<- subset(fci.data, State== "Kentucky")
-stateText<- "Kentucky"
+state.data<- subset(fci.data, State== "Tennessee")
+stateText<- "Tennessee"
 head(state.data)
 ```
 # totals values
 ```{r}
  #stTotal Ac finds the total acreage value in the dataframe for selected state
 
-        stTotalAc <- format(
-                round(
-                    subset(fci.data, 
-                      State %in% input$state &
+stTotalAc <- format( round( subset(state.data,
                       Stand_Origin %in% "Total" &
                       Stand_Age %in% "Total" &
                       Forest.type.group %in% "Total")[,"ac"], #endsubset
                     0), #endround 
-                big.mark=",")#endformat
-          
-        #stTotalC finds the total carbon stored value in the dataframe for selected state
-        stTotalC <- format(
-            round(
-              subset(fci.data, 
-                    State %in% input$state &
+                big.mark=",")
+
+stTotalC <- format( round( subset(state.data, 
                     Stand_Origin %in% "Total" &
                     Stand_Age %in% "Total" &
                     Forest.type.group %in% "Total")[,"tC"], #endsubset
                   0), #endround 
-              big.mark=",")#endformat
-        
-        #stTotalFCI finds the total forest carbon index value in the dataframe for selected state
-        stTotalFCI <- format(
-                round(
-                    subset(fci.data, 
-                           State %in% input$state &
+              big.mark=",")
+
+stTotalFCI <- subset(state.data, 
                                Stand_Origin %in% "Total" &
                                Stand_Age %in% "Total" &
-                               Forest.type.group %in% "Total")[,"tC_ac"], #endsubset
-                    0), #endround 
-                big.mark=",")#endformat
+                               Forest.type.group %in% "Total")[,"tC_ac"]
             
 
 ```
@@ -85,6 +75,8 @@ ft.ac.pie
 ft.tC.pie
 #plot_grid(ft.ac.pie, ft.tC.pie, ncol=1)
 
+
+
 ```
 ```{r}
 totals.table<- totals.data %>% select(-c(Stand_Age, Stand_Origin, State)) %>% arrange((desc(tC))) %>%
@@ -96,8 +88,8 @@ totals.table
 ```{r}
 #stSumFt finds the number of different forest types in a selected state
 
-  stSumFt<- as.numeric(n_distinct(state.data$Forest.type.group))
-        
+  stSumFt<- n_distinct(select(subset(state.data, Forest.type.group!= "Total"), Forest.type.group))
+      
   stMaxAcFT_Ac<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
         Forest.type.group!= "Total") %>% select(ac) %>% max() #%>% format(big.mark=",") 
   
@@ -114,7 +106,7 @@ totals.table
   
   stMaxAcFT_Name
   
-  stMaxAcFT_Ac
+  stSumFt
 ```
 # Fake Forests
 ```{r}
@@ -124,6 +116,8 @@ stFCINatural<- subset(state.data, Stand_Origin== "Natural" & Stand_Age== "Total"
 stFCIPlanted<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total")[, "tC_ac"]
 
+additional<- stFCINatural - stFCIPlanted
+
 stPlantedAc<-subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total")[, "ac"]
 
@@ -131,12 +125,23 @@ stPlantedC<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" &
     "Total")[, "tC"]
 
 stMissedCarbon<- (stPlantedAc * stFCINatural)- stPlantedC
+
+totalAc<- subset(state.data, Stand_Origin %in% "Total" &
+                      Stand_Age %in% "Total" &
+                      Forest.type.group %in% "Total")[,"ac"]
+percentage<- round((stPlantedAc/totalAc)*100, 2)
+additional
+subset(state.data, Stand_Origin== "Natural" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "tC_ac"]
+subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+    "Total")[, "tC_ac"]
 ```
 Bar Graphs
 ```{r}
-ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total")
-ft.data[is.na(ft.data)]<-0 
-#ft.data
+ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total") %>% 
+  mutate_if(is.numeric, ~replace(., is.na(.), 0))
+#ft.data[is.na(ft.data)]<-0 
+ft.data
 fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Stand_Origin)) +
   geom_col(position= position_dodge(), na.rm= TRUE) + 
   ggtitle("FCI per Forest Type Group") +
@@ -145,8 +150,11 @@ fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Sta
   scale_fill_manual(values= c("#348045", "#B3DCBC")) + theme_minimal() +
   theme(
     plot.title= element_text(size= 20, face= "bold"),
-    axis.text.x= element_text(angle= 45, size= 8, vjust= .95, hjust= .95),
-    axis.title= element_text(size= 14))
+    axis.text.x= element_text(angle= 45, size= 8, vjust= .99, hjust= .95, color= "black"),
+    axis.title= element_text(size= 14),
+    legend.title= element_text(size= 12),
+    legend.text = element_text(size= 10),
+    axis.text.y= element_text(size=10, color= "black"))
   
 fake.forests.bar
 
@@ -188,5 +196,35 @@ Here’s how the forest types of `r params$stateText ` rank against other states
 
 #Maturing and Regenerating Forests
 ```{r}
+play<- subset(fci.data, State== "Florida")
 
+model.data<- subset(state.data, Stand_Age!= "Total")
+#ageclass$Stand_Age.dummy<- C(ageclass$Stand_Age, treatment)
+
+#model.matrix(~Stand_Age, data= ageclass)
+
+#print(ageclass$Stand_Age.dummy)
+#ageclass
+
+#C(ageclass$Stand_Age, treatment)
+
+linear.mod<- glm(tC_ac ~ Stand_Age, data= model.data, family= gaussian)
+
+#anova(linear.mod)
+summary(linear.mod)
+
+
+plot(model.data$Stand_Age, model.data$tC_ac)
+```
+
+
+```{r}
+calc<- 0
+
+#sliderInput("percent_slider", label = "Percentage of forests moved to the next age class:",
+ #             min = 0, max = 100, value = 10, step = 5)
+
+#renderText({
+#   paste("If the state moved ", input$percent_slider, "% of all forests to the next age class, it would result in an #additional ", calc, " tons of carbon sequestered.")
+#})
 ```

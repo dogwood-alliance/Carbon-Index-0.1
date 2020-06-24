@@ -1,6 +1,7 @@
 ---
 title: "Forest Carbon Index Report"
 output: html_document
+runtime: shiny
 params:
   data: NA
   n: NA
@@ -17,6 +18,8 @@ knitr::opts_chunk$set(echo = params$printcode, scipen=999)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
+library(modelr)
+library(shiny)
 ```
 
 ```{r echo= FALSE}
@@ -50,7 +53,7 @@ The great state of `r params$stateText ` has `r stTotalAc` total acres of forest
 
 ## Forest Types  
 ```{r echo= FALSE}
-stSumFt<- as.numeric(n_distinct(state.data$Forest.type.group))
+stSumFt<- n_distinct(select(subset(state.data, Forest.type.group!= "Total"), Forest.type.group))
 
 stMaxAc_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
         Forest.type.group!= "Total") %>% select(ac) %>% max() 
@@ -94,13 +97,11 @@ totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" &
 ft.ac.pie<- ggplot(totals.data, aes(x="", y= ac, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
   labs(title= "Acreage per forest type", fill= "Forest Type") +
-  scale_fill_viridis(discrete = TRUE) +
   theme_void()
 
 ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
   labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
-  scale_fill_viridis(discrete = TRUE) +
   theme_void()
 
 ft.ac.pie
@@ -143,7 +144,7 @@ totalAc<- subset(state.data, Stand_Origin %in% "Total" &
                       Stand_Age %in% "Total" &
                       Forest.type.group %in% "Total")[,"ac"]
 
-percentage<- round((stPlantedAc/totalAc)*100, 0)
+percentage<- round((stPlantedAc/totalAc)*100, 2)
 
 cars<- format((((stPlantedAc * stFCINatural)- stPlantedC)*(44/12) * 0.192608384), big.mark = ",")
 ```
@@ -160,8 +161,8 @@ if (params$user== "Scientist"){
 
 
 ```{r echo= FALSE}
-ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total")
-ft.data[is.na(ft.data)]<-0 
+ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total")  %>% 
+  mutate_if(is.numeric, ~replace(., is.na(.), 0))
 
 fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Stand_Origin)) +
   geom_col(position= position_dodge()) + 
@@ -171,8 +172,11 @@ fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Sta
   scale_fill_manual(values= c("#348045", "#B3DCBC")) + theme_minimal() +
   theme(
     plot.title= element_text(size= 20, face= "bold"),
-    axis.text.x= element_text(angle= 45, size= 8, vjust= .95, hjust= .95),
-    axis.title= element_text(size= 14))
+    axis.text.x= element_text(angle= 45, size= 8, vjust= .99, hjust= .95, color= "black"),
+    axis.title= element_text(size= 14),
+    legend.title= element_text(size= 12),
+    legend.text = element_text(size= 10),
+    axis.text.y= element_text(size=10, color= "black"))
 
 fake.forests.bar
 ```
@@ -191,13 +195,13 @@ ft.table
 ## How Does `r params$stateText ` Compare?  
 
 ```{r echo=FALSE}
-ACrank<- subset(data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+ACrank<- subset(params$data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% arrange((desc(ac))) %>% pull(State) %in% params$stateText %>% which 
 
-TCrank<- subset(data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+TCrank<- subset(params$data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% select(tC, State) %>% arrange((desc(tC))) %>% pull(State) %in% params$stateText %>% which 
 
-FCIrank<- subset(data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+FCIrank<- subset(params$data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% select(tC_ac, State) %>% arrange((desc(tC_ac))) %>% pull(State) %in% params$stateText %>% which 
 ```
 
@@ -227,7 +231,7 @@ Planted forests (plantations) usually have a short “rotation” -- the number 
 
 Every time an acre of forest is harvested, it releases carbon. If that acre is used for bioenergy, the carbon can be emitted in as little as 1-2 years. If that acre is used for more traditional forest products, like paper, pulp, or lumber, 86% of that carbon is emitted within 100 years, with just 14% remaining behind in finished products and landfills. Although plantations are generally intended for commercial harvest, a substantial amount of natural forests also get harvested every year. 
 
-Contrary to common belief, older forests do not stop or significantly slow carbon sequestration. Instead, older forests continue to store carbon well beyond 100 years of age. In fact, the carbon uptake rate is remarkably similar for both younger and older forests. 
+Contrary to common belief, forests do not stop or significantly slow in carbon sequestration when they are old. Instead, older forests continue to store carbon well beyond 100 years of age. In fact, the carbon uptake rate is remarkably similar for both younger and older forests. 
 
 **THE PAYOFF**  
 
@@ -242,8 +246,17 @@ Reducing the amount of forest harvest in `r params$stateText ` could improve car
 ```{r echo= FALSE}
 #Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Age Class
 #	Percentage slider 0-100. Takes X % of previous age class and sticks it in the next.
-
+model.data<- subset(state.data, Stand_Age!= "Total")
+linear.mod<- glm(tC_ac ~ Stand_Age, data= model.data, family= gaussian)
 #Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
+calc=0
+
+sliderInput("percent_slider", label = "Percentage of forests moved to the next age class:",
+              min = 0, max = 100, value = 10, step = 5)
+
+renderText({
+   paste("If the state moved ", input$percent_slider, "% of all forests to the next age class, it would result in an additional ", calc, " tons of carbon sequestered.")
+})
 ```
 ### Letting Forests Regenerate Naturally
 
