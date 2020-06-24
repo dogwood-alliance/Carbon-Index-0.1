@@ -18,10 +18,9 @@ library(shinyWidgets)
 
 
 ## read in data 
-data <- read.csv("CIP_Type1_2020-04-07.csv", header=T, na.strings=c("-"))
-data$ac<- as.numeric(as.character(data$ac))
-data$tC<- as.numeric(as.character(data$tC))
-#data$tC_ac<- as.numeric(as.character(data$tC_ac))
+data <- read.csv("CIP_Type1_2020-04-07.csv", header=T, na.strings=c("-")) 
+#data$ac<- as.numeric(as.character(data$ac))
+#data$tC<- as.numeric(as.character(data$tC))
 head(data)
 str(data)
 
@@ -47,6 +46,7 @@ shinyApp(
             
             
             mainPanel(
+                img(src="dogwood-logo-color-01.png", height= "20%", width= "80%"),
                 tabsetPanel(type="tabs", 
                             
                     tabPanel("Introduction", 
@@ -66,16 +66,17 @@ shinyApp(
                              p(),
                              splitLayout(cellWidths = c("50%", "50%"), plotOutput("acPie"),  plotOutput("tCPie")),
                              
-                             p(strong("Fake Forests")),
+                             h5("Fake Forests"),
                              p("On average, natural forests in ", textOutput("justStateName3", inline=T), " store ", textOutput("additionalC", inline= T), " additional tons of carbon per acre than artificially regenerated forests. Across the state there are ", textOutput("stPlantedAc", inline=T), " acres of plantations, representing ", textOutput("percentage", inline=T), "% of total forestland."),
                              p("If those acres of planted forests had been naturally regenerated, they would currently be storing approximately ", textOutput("stMissedC", inline= T), " more tons of carbon, equivalent to an additional ", textOutput("cars", inline=T), " passenger vehicles on the road for one year."),
                              p("You can see how much more tons of carbon per acre that natural forests store than planted forests"),
                              plotOutput("fakeForestsBar", width= "100%"),
                              #dataTableOutput("stateTable"),
                              p(),
-                             p(strong("Natural Climate Solutions")),
+                             h5("Natural Climate Solutions"),
                              p(textOutput("justStateName4", inline= T), " could store more carbon, decreasing the effects of climate change, if more of the state's forests were allowed to mature instead of being prematurely cut down and if more forests were naturally regenerated rather than artificially planted. You can see how much more carbon the state's forests would store by picking a percentage from the slider on the left."),
-                             
+                             br(),
+                             em("All data gathered from: USDA Forest Service, Forest Inventory and Analysis Program, Tue Mar 31 13:53:53 GMT 2020. Forest Inventory EVALIDator web-application Version 1.8.0.01. St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/Evalidator/evalidator.jsp]"),
                              ),#end tabPanel
                     tabPanel("Download State Report", 
                              

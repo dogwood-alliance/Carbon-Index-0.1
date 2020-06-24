@@ -12,7 +12,7 @@ library(tidyverse)
 library(dplyr)
 library(ggplot2)
 library(viridis)
-library(cowplot)
+library(GGally)
 library(modelr)
 ```
 
@@ -190,31 +190,29 @@ ACtable
 ```
 Here’s how the forest types of `r params$stateText ` rank against other states:
 ```{r}
-
+model.data<- subset(state.data, Stand_Age!= "Total") 
 ```
 
 
 #Maturing and Regenerating Forests
 ```{r}
-play<- subset(fci.data, State== "Florida")
+model.data<- subset(state.data, Stand_Age!= "Total") %>% na.omit()
+model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
 
-model.data<- subset(state.data, Stand_Age!= "Total")
-#ageclass$Stand_Age.dummy<- C(ageclass$Stand_Age, treatment)
-
-#model.matrix(~Stand_Age, data= ageclass)
-
-#print(ageclass$Stand_Age.dummy)
-#ageclass
-
-#C(ageclass$Stand_Age, treatment)
-
-linear.mod<- glm(tC_ac ~ Stand_Age, data= model.data, family= gaussian)
+#head(model.data)
+linear.mod<- lm(tC_ac ~ Stand_Age, data= model.data)
 
 #anova(linear.mod)
 summary(linear.mod)
 
-
-plot(model.data$Stand_Age, model.data$tC_ac)
+ggplot(data = model.data, aes(x = Stand_Age, y = tC_ac)) +
+geom_point() +
+stat_smooth(method = "lm", col = "dodgerblue3") +
+theme(panel.background = element_rect(fill = "white"),
+axis.line.x=element_line(),
+axis.line.y=element_line()) +
+ggtitle("Linear Model Fitted to Data")
+#plot(model.data$Stand_Age, model.data$tC_ac)
 ```
 
 

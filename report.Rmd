@@ -207,11 +207,11 @@ FCIrank<- subset(params$data, Stand_Origin== "Planted" & Stand_Age== "Total" & F
 
 In the fourteen state region of the South, `r params$stateText ` ranks:   
   
-* `r ACrank` of 14 in Acres of Forestland   
+* `r ACrank` of 11 in Acres of Forestland   
 
-* `r TCrank` of 14 in Tons of Carbon Sequestered in Forestland  
+* `r TCrank` of 11 in Tons of Carbon Sequestered in Forestland  
 
-* `r FCIrank` of 14 in Forest Carbon Index (FCI)  
+* `r FCIrank` of 11 in Forest Carbon Index (FCI)  
 
 Here’s how the forest types of `r params$stateText ` rank against other states:
 
@@ -243,21 +243,42 @@ Reducing the amount of forest harvest in `r params$stateText ` could improve car
 
 * If the state moved 50% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
 
-```{r echo= FALSE}
+```{r}
+model.data<- subset(state.data, Stand_Age!= "Total") %>% na.omit()
+model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
+
+#linear regression of effect on stand age and acreage on carbon storage
+linear.mod<- lm(tC ~ Stand_Age + ac, data= model.data)
+
+#function to calculate how much more carbon would be stored if a user inputted percentage of all forests were moved to the next age class
+
+moreCarbon<- function(percentage){
+  predict.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") 
+  more<- 0
+  for (x in predict.data$Stand_Age){
+    idx<- which(predict.data$Stand_Age== x)
+    ac.val<- (predict.data$ac[idx])
+    decimal<- as.numeric(percentage/100)
+    if(x!= "100+ years"){
+      newdata<- data.frame(ac= ac.val*decimal,Stand_Age= predict.data$Stand_Age[idx+1])
+      more<- more + predict(linear.mod, newdata, type="response")
+    }
+  }
+  more
+}
+
 #Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Age Class
 #	Percentage slider 0-100. Takes X % of previous age class and sticks it in the next.
-model.data<- subset(state.data, Stand_Age!= "Total")
-linear.mod<- glm(tC_ac ~ Stand_Age, data= model.data, family= gaussian)
 #Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
-calc=0
-
 sliderInput("percent_slider", label = "Percentage of forests moved to the next age class:",
               min = 0, max = 100, value = 10, step = 5)
 
 renderText({
-   paste("If the state moved ", input$percent_slider, "% of all forests to the next age class, it would result in an additional ", calc, " tons of carbon sequestered.")
+   paste("If the state moved ", input$percent_slider, "% of all forests to the next age class, it would result in an additional ", moreCarbon(input$percent_slider), " tons of carbon sequestered.")
 })
 ```
+
+
 ### Letting Forests Regenerate Naturally
 
 **WHY**  
@@ -309,3 +330,5 @@ We are not legislators, however, we can envision a reduction in forest harvest t
 
 Do you want to act on this information, but you’re not sure where to go? We’ve got you covered! Here are some links…
 
+All data gathered from:
+USDA Forest Service, Forest Inventory and Analysis Program, Tue Mar 31 13:53:53 GMT 2020. Forest Inventory EVALIDator web-application Version 1.8.0.01. St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/Evalidator/evalidator.jsp]
