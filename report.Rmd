@@ -236,14 +236,7 @@ Contrary to common belief, forests do not stop or significantly slow in carbon s
 **THE PAYOFF**  
 
 Reducing the amount of forest harvest in `r params$stateText ` could improve carbon sequestration and contribute to the state’s natural climate solutions. In the data, this would be observed as allowing more forests to mature to the next age class. We can model this behavior by doing some simple table calculations, and predict what the increase in carbon would be if acres managed to successfully grow into the next age class.
-
-* If the state moved 10% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
-
-* If the state moved 25% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
-
-* If the state moved 50% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
-
-```{r}
+```{r echo= FALSE}
 model.data<- subset(state.data, Stand_Age!= "Total") %>% na.omit()
 model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
 
@@ -252,7 +245,7 @@ linear.mod<- lm(tC ~ Stand_Age + ac, data= model.data)
 
 #function to calculate how much more carbon would be stored if a user inputted percentage of all forests were moved to the next age class
 
-moreCarbon<- function(percentage){
+letForestsMature<- function(percentage){
   predict.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") 
   more<- 0
   for (x in predict.data$Stand_Age){
@@ -267,6 +260,18 @@ moreCarbon<- function(percentage){
   more
 }
 
+ten.old<- letForestsMature(10)
+twenty.five.old<- letForestsMature(25)
+fifty.old<- letForestsMature(50)
+```
+
+* If the state moved 10% of all forests to the next age class, it would result in an additional `r ten.old` tons of carbon sequestered in `r params$stateText `’s forests.  
+
+* If the state moved 25% of all forests to the next age class, it would result in an additional `r twenty.five.old` tons of carbon sequestered in `r params$stateText `’s forests.  
+
+* If the state moved 50% of all forests to the next age class, it would result in an additional `r fifty.old` tons of carbon sequestered in `r params$stateText `’s forests.  
+
+```{r}
 #Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Age Class
 #	Percentage slider 0-100. Takes X % of previous age class and sticks it in the next.
 #Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
@@ -274,31 +279,61 @@ sliderInput("percent_slider", label = "Percentage of forests moved to the next a
               min = 0, max = 100, value = 10, step = 5)
 
 renderText({
-   paste("If the state moved ", input$percent_slider, "% of all forests to the next age class, it would result in an additional ", moreCarbon(input$percent_slider), " tons of carbon sequestered.")
+   paste("If the state moved ", input$percent_slider, "% of all forests to the next age class, it would result in an additional ", letForestsMature(input$percent_slider), " tons of carbon sequestered.")
 })
 ```
 
+```{r echo= FALSE}
+if (params$user== "Scientist"){
+  cat("*The above values were calculated by ")
+}
+```
 
 ### Letting Forests Regenerate Naturally
 
 **WHY**  
 Although planting trees does regenerate the area more quickly, there are lasting effects from those plantings that are seen in carbon sequestration. On average, natural forests in `r params$stateText ` store `r additional` additional tons of carbon per acre than artificially regenerated forests. This means that a naturally regenerated forest stand will, as a rule, store more carbon than an artificially regenerated (planted) stand. Beyond carbon benefits, natural regeneration also reduces the amount of pesticides, soil impaction, and water runoff that can occur after a forest harvest. 
+```{r}
+letForestsRegenerate<- function(percentage){
+  model.data2<- subset(state.data, Stand_Origin!= "Total") %>% na.omit()
+  decimal<- as.numeric(percentage/100)
+  avg<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Natural"])
+  #planted<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Planted"])
+  acreage<- subset(state.data, Stand_Origin=="Planted" & Stand_Age=="Total" & Forest.type.group=="Total")[,"ac"]
+  avg*acreage*decimal
+}
+
+ten.natural<- letForestsRegenerate(10)
+twenty.five.natural<- letForestsRegenerate(25)
+fifty.natural<-  letForestsRegenerate(50)
+```
 
 **THE PAYOFF**
 Although we cannot choose individual acres, we can see the potential carbon sequestration difference if more acres were naturally instead of artificially regenerated.  
 
-* If the state had 10% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
+* If the state had 10% more naturally regenerated forests, its forests would sequester, on average, `r ten.natural` more tons of carbon.  
 
-* If the state had 25% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
+* If the state had 25% more naturally regenerated forests, its forests would sequester, on average, `r twenty.five.natural` more tons of carbon.  
 
-* If the state had 50% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
+* If the state had 50% more naturally regenerated forests, its forests would sequester, on average, `r fifty.natural` more tons of carbon.  
 
 ```{r echo= FALSE}
 #Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Stand Origin
 #	Percentage slider 0-100. Takes X % of artificial and changes it to natural.
 
+sliderInput("percent_slider2", label = "Percentage of forests moved to naturally regenerated:",
+              min = 0, max = 100, value = 10, step = 5)
 #Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
 
+renderText({
+   paste("If the state moved ", input$percent_slider2, "% of artificially planted forests in the state to naturally regenerated, it would result in an additional ", letForestsRegenerate(input$percent_slider), " tons of carbon sequestered.")
+})
+```
+
+```{r echo= FALSE}
+if (params$user== "Scientist"){
+  cat("*The above values were calculated by ")
+}
 ```
 
 

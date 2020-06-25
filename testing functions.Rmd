@@ -189,36 +189,61 @@ ACtable
 
 ```
 Here’s how the forest types of `r params$stateText ` rank against other states:
-```{r}
-model.data<- subset(state.data, Stand_Age!= "Total") 
-```
 
-
-#Maturing and Regenerating Forests
+#Maturing Forests
 ```{r}
-model.data<- subset(state.data, Stand_Age!= "Total") %>% na.omit()
+model.data<- subset(state.data, Stand_Age!= "Total")  %>% na.omit()
 model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
 
 #head(model.data)
-linear.mod<- lm(tC_ac ~ Stand_Age, data= model.data)
+linear.mod<- lm(tC ~ Stand_Age + ac, data= model.data)
 
 #anova(linear.mod)
 summary(linear.mod)
 
-ggplot(data = model.data, aes(x = Stand_Age, y = tC_ac)) +
-geom_point() +
-stat_smooth(method = "lm", col = "dodgerblue3") +
-theme(panel.background = element_rect(fill = "white"),
-axis.line.x=element_line(),
-axis.line.y=element_line()) +
-ggtitle("Linear Model Fitted to Data")
-#plot(model.data$Stand_Age, model.data$tC_ac)
+p<- ggplot(data = model.data, aes(x = Stand_Age, y = tC_ac)) +
+  geom_point() +
+  stat_smooth(method = "lm", col = "dodgerblue3") +
+  theme(panel.background = element_rect(fill = "white"),
+  axis.line.x=element_line(),
+  axis.line.y=element_line()) +
+  ggtitle("Linear Model Fitted to Data")
+#p
+plot(model.data$ac, model.data$tC)
+
+new<- data.frame(ac= 282741,Stand_Age= "41-60 years" )
+
+predict(linear.mod, new, type="response")
 ```
 
 
 ```{r}
-calc<- 0
+#calc<- 10
+bleh<- subset(state.data, Stand_Origin== "Total" & Forest.type.group== "Total")  
+bleh
+x= "21-40 years"
+idx<- which(bleh$Stand_Age== x)
+#bleh$ac[idx]
+#bleh$Stand_Age[idx+1]
 
+letForestsMature<- function(percentage){
+  predict.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") 
+  more<- 0
+  for (x in predict.data$Stand_Age){
+    idx<- which(predict.data$Stand_Age== x)
+    ac.val<- (predict.data$ac[idx])
+    decimal<- as.numeric(percentage/100)
+    if(x!= "100+ years"){
+      newdata<- data.frame(ac= ac.val*decimal,Stand_Age= predict.data$Stand_Age[idx+1])
+      more<- more + predict(linear.mod, newdata, type="response")
+      #predict.data$ac[idx]<- (ac.val- ac.val*decimal)
+      #predict.data$tC[idx+1]<- predict.data$ac[idx+1] + more
+    }
+  }
+  more
+}
+
+letForestsMature(10)
 #sliderInput("percent_slider", label = "Percentage of forests moved to the next age class:",
  #             min = 0, max = 100, value = 10, step = 5)
 
@@ -226,3 +251,29 @@ calc<- 0
 #   paste("If the state moved ", input$percent_slider, "% of all forests to the next age class, it would result in an #additional ", calc, " tons of carbon sequestered.")
 #})
 ```
+
+# Regenerating Forests
+```{r}
+model.data2<- subset(state.data, Stand_Origin!= "Total") %>% na.omit()
+#model.data2$Stand_Origin<- factor(model.data2$Stand_Origin, levels= c("Planted", "Natural"))
+head(model.data2)
+my.model<-  lm(tC ~ Stand_Origin + ac, data= model.data2)
+
+#anova(linear.mod)
+#summary(my.model)
+
+plot(model.data2$Stand_Origin, model.data2$tC_ac)
+
+letForestsRegenerate<- function(percentage){
+  model.data2<- subset(state.data, Stand_Origin!= "Total") %>% na.omit()
+  decimal<- as.numeric(percentage/100)
+  avg<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Natural"])
+  #planted<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Planted"])
+  acreage<- subset(state.data, Stand_Origin=="Planted" & Stand_Age=="Total" & Forest.type.group=="Total")[,"ac"]
+  avg*acreage*decimal
+}
+
+letForestsRegenerate(10)
+mean(model.data2$tC_ac[model.data2$Stand_Origin== "Natural"])
+```
+
