@@ -231,15 +231,34 @@ Planted forests (plantations) usually have a short “rotation” -- the number 
 
 Every time an acre of forest is harvested, it releases carbon. If that acre is used for bioenergy, the carbon can be emitted in as little as 1-2 years. If that acre is used for more traditional forest products, like paper, pulp, or lumber, 86% of that carbon is emitted within 100 years, with just 14% remaining behind in finished products and landfills. Although plantations are generally intended for commercial harvest, a substantial amount of natural forests also get harvested every year. 
 
-Contrary to common belief, forests do not stop or significantly slow in carbon sequestration when they are old. Instead, older forests continue to store carbon well beyond 100 years of age. In fact, the carbon uptake rate is remarkably similar for both younger and older forests. 
+Contrary to common belief, forests do not stop or significantly slow in carbon sequestration when they are old. Instead, older forests continue to store carbon well beyond 100 years of age. In fact, the carbon uptake rate is remarkably similar for both younger and older forests. As shown in the graph below, the total FCI, or tons of carbon stored per acre, in `r params$stateText` becomes greater as forests age. 
+
+```{r}
+model.data<- subset(state.data, Stand_Age!= "Total") %>% na.omit()
+model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
+
+age.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") %>% 
+  mutate_at(vars(tC_ac), funs(round(., 0)))
+
+age.bar<- ggplot(age.data, aes(x= Stand_Age, y= tC_ac)) +
+  geom_col(fill= "darkolivegreen4") + 
+  ggtitle("FCI per Forest Age Class") +
+  labs(x= "Forest Age Class", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
+  geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=4) + theme_minimal() +
+  theme(
+    plot.title= element_text(size= 20, face= "bold"),
+    axis.text.x= element_text(size= 10, color= "black", vjust= .99),
+    axis.title= element_text(size= 14),
+    axis.text.y= element_text(size=10, color= "black"))
+  
+age.bar
+```
+
 
 **THE PAYOFF**  
 
 Reducing the amount of forest harvest in `r params$stateText ` could improve carbon sequestration and contribute to the state’s natural climate solutions. In the data, this would be observed as allowing more forests to mature to the next age class. We can model this behavior by doing some simple table calculations, and predict what the increase in carbon would be if acres managed to successfully grow into the next age class.
 ```{r echo= FALSE}
-model.data<- subset(state.data, Stand_Age!= "Total") %>% na.omit()
-model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
-
 #linear regression of effect on stand age and acreage on carbon storage
 linear.mod<- lm(tC ~ Stand_Age + ac, data= model.data)
 
@@ -285,7 +304,7 @@ renderText({
 
 ```{r echo= FALSE}
 if (params$user== "Scientist"){
-  cat("*The above values were calculated by ")
+  cat("*The above values were calculated by generating a linear model of tons of carbon stored based on forest acreage and age in the state. This model was then used to predict how much more carbon would be stored if x percent of each forest age class were moved to the next age class.")
 }
 ```
 
@@ -298,7 +317,6 @@ letForestsRegenerate<- function(percentage){
   model.data2<- subset(state.data, Stand_Origin!= "Total") %>% na.omit()
   decimal<- as.numeric(percentage/100)
   avg<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Natural"])
-  #planted<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Planted"])
   acreage<- subset(state.data, Stand_Origin=="Planted" & Stand_Age=="Total" & Forest.type.group=="Total")[,"ac"]
   avg*acreage*decimal
 }
@@ -332,7 +350,7 @@ renderText({
 
 ```{r echo= FALSE}
 if (params$user== "Scientist"){
-  cat("*The above values were calculated by ")
+  cat("*The above values were calculated by calculating the average FCI of naturally generated forests in the state. This average FCI value was then multiplied by X percent of the total acreage of human-planted forests in the state to yield the total carbon that would be stored if that amount of forest was naturally generated.")
 }
 ```
 
