@@ -250,11 +250,11 @@ idx<- which(bleh$Stand_Age== x)
 
 letForestsMature<- function(percentage){
   predict.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") 
+  decimal<- as.numeric(percentage/100)
   more<- 0
   for (x in predict.data$Stand_Age){
     idx<- which(predict.data$Stand_Age== x)
     ac.val<- (predict.data$ac[idx])
-    decimal<- as.numeric(percentage/100)
     if(x!= "100+ years"){
       newdata<- data.frame(ac= ac.val*decimal,Stand_Age= predict.data$Stand_Age[idx+1])
       more<- more + predict(linear.mod, newdata, type="response")
