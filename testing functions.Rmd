@@ -23,8 +23,8 @@ fci.data$ac<- as.numeric(as.character(fci.data$ac))
 fci.data$tC<- as.numeric(as.character(fci.data$tC))
 #head(fci.data)
 
-state.data<- subset(fci.data, State== "Tennessee")
-stateText<- "Tennessee"
+state.data<- subset(fci.data, State== "North Carolina")
+stateText<- "North Carolina"
 head(state.data)
 ```
 # totals values
@@ -62,22 +62,25 @@ totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" &
 ft.ac.pie<- ggplot(totals.data, aes(x="", y= ac, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
   labs(title= "Acreage per forest type", fill= "Forest Type") +
-  #scale_fill_viridis(discrete = TRUE) +
-  theme_void()
-
-ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
-  geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
-  labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
-  #scale_fill_viridis(discrete = TRUE) +
+  scale_fill_viridis(discrete = TRUE) +
   theme_void()
 
 ft.ac.pie
-ft.tC.pie
-#plot_grid(ft.ac.pie, ft.tC.pie, ncol=1)
-
-
+#ft.tC.pie
 
 ```
+
+```{r}
+ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
+  geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
+  labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
+  scale_fill_viridis(discrete = TRUE) +
+  theme_void()
+
+ft.tC.pie
+```
+
+
 ```{r}
 totals.table<- totals.data %>% select(-c(Stand_Age, Stand_Origin, State)) %>% arrange((desc(tC))) %>%
   rename("Forest Type"= Forest.type.group, "Carbon Stored (tons)"= tC, "Acreage"= ac, "Forest Carbon Index"= 
@@ -146,7 +149,7 @@ fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Sta
   geom_col(position= position_dodge(), na.rm= TRUE) + 
   ggtitle("FCI per Forest Type Group") +
   labs(x= "Forest Type Group", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
-  geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=2) +
+  geom_text(aes(label=round(tC_ac,0)), vjust=2.2, color="white",position = position_dodge(0.9), size=3) +
   scale_fill_manual(values= c("#348045", "#B3DCBC")) + theme_minimal() +
   theme(
     plot.title= element_text(size= 20, face= "bold"),

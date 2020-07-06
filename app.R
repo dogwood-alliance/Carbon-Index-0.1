@@ -137,7 +137,8 @@ shinyApp(
         
         fakeForestsData<- reactive({
             d<- subset(data, State %in% input$state & Stand_Age %in% "Total" & Stand_Origin!= "Total") %>% 
-                mutate_if(is.numeric, ~replace(., is.na(.), 0))
+                mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>% 
+                mutate_at(vars(tC_ac), funs(round(., 0)))
             d
         })
         
@@ -245,7 +246,7 @@ shinyApp(
                 geom_col(position= position_dodge()) + 
                 ggtitle("FCI per Forest Type Group") +
                 labs(x= "Forest Type Group", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
-                geom_text(aes(label=fakeForestsData()$tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=2) +
+                geom_text(aes(label=fakeForestsData()$tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=4) +
                 scale_fill_manual(values= c("#348045", "#B3DCBC")) + theme_minimal() +
                 theme(
                     plot.title= element_text(size= 20, face= "bold"),
@@ -261,7 +262,7 @@ shinyApp(
                 geom_col(fill= "darkolivegreen4") + 
                 ggtitle("FCI per Forest Age Class") +
                 labs(x= "Forest Age Class", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
-                geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=4) + theme_minimal() +
+                geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=5) + theme_minimal() +
                 theme(
                     plot.title= element_text(size= 20, face= "bold"),
                     axis.text.x= element_text(size= 10, color= "black", vjust= .99),
@@ -297,7 +298,7 @@ shinyApp(
 
         output$report <- downloadHandler(
             # For PDF output, change this to "report.pdf"
-            filename = "report.html",
+            filename = "report.pdf",
             content = function(file) {
                 # Copy the report file to a temporary directory before processing it, in
                 # case we don't have write permissions to the current working dir (which
