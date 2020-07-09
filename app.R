@@ -1,12 +1,3 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 
 ### library imports
 library(shiny)
@@ -15,7 +6,6 @@ library(tidyverse)
 library(dplyr)
 library(ggplot2)
 library(shinyWidgets)
-
 
 ## read in data 
 data <- read.csv("CIP_Type1_2020-04-07.csv", header=T, na.strings=c("-")) 
@@ -46,7 +36,7 @@ shinyApp(
             
             
             mainPanel(
-                img(src="dogwood-logo-color-01.png", height= "20%", width= "80%"),
+                img(src="dogwood-logo-color-01.png", height= "20%", width= "80%"), #add Dogwood logo at the top
                 tabsetPanel(type="tabs", 
                             
                     tabPanel("Introduction", 
@@ -82,8 +72,6 @@ shinyApp(
                              p("As shown in the graph below, the total FCI, or tons of carbon stored per acre, in ", textOutput("justStateName5", inline=T), " becomes greater as forests age."),
                              plotOutput("forestAgeBar", width= "90%"),
                              br(),
-                             #h5("Letting Forests Regenerate Naturally"),
-                             #br(),
                              em("All data gathered from: USDA Forest Service, Forest Inventory and Analysis Program, Tue Mar 31 13:53:53 GMT 2020. Forest Inventory EVALIDator web-application Version 1.8.0.01. St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/Evalidator/evalidator.jsp]"),
                              ),#end tabPanel
                     tabPanel("Download State Report", 
@@ -98,23 +86,18 @@ shinyApp(
 
     ### back end and data stuff
     
-    
     server = function(input, output){
-        
-        output$userRole <- renderText({
-            paste("I am a(n) ", input$user_role)
-        })
         
         output$stateChosenName <- renderText({ 
             paste("State Chosen: ", input$state)
         })
-        
+ #rendering inputted state as text       
         output$justStateName <- renderText({input$state})
         output$justStateName2 <- renderText({input$state})
         output$justStateName3<- renderText({input$state})
         output$justStateName4<- renderText({input$state})
         output$justStateName5<- renderText({input$state})
-        
+ #rendering inputted percentage as text       
         output$percentText<- renderText({input$slider})
         output$percentText2<- renderText({input$slider})
         
@@ -125,26 +108,25 @@ shinyApp(
         })
         
         forestTypeData<- reactive({
-           data<- subset(data, State== input$state & Stand_Origin== "Total" & Stand_Age== "Total" & 
+            #Filter data to include only totals values for each forest type for pie charts
+           data<- subset(stateData(), Stand_Origin== "Total" & Stand_Age== "Total" & 
                                      Forest.type.group!= "Total") 
            data
            
         })
         
-        output$stateTable <- renderDataTable({
-            datatable(stateData())
-        })
-        
         fakeForestsData<- reactive({
-            d<- subset(data, State %in% input$state & Stand_Age %in% "Total" & Stand_Origin!= "Total") %>% 
-                mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>% 
-                mutate_at(vars(tC_ac), funs(round(., 0)))
+            #Filter data to include only total Stand Age rows for bar graph showing FCI of natural and planted stands per forest type group 
+            d<- subset(stateData(), Stand_Age %in% "Total" & Stand_Origin!= "Total") %>% 
+                mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>%  #replace NA values with )
+                mutate_at(vars(tC_ac), funs(round(., 0))) #round FCI column to whole number
             d
         })
         
         ageData<- reactive({
-            age.data<- subset(data, State== input$state & Stand_Origin== "Total" & Forest.type.group== "Total" & Stand_Age!= "Total") %>% 
-                mutate_at(vars(tC_ac), funs(round(., 0)))
+            #subset for totals values for bar graph showing FCI per forest age class
+            age.data<- subset(stateData(), Stand_Origin== "Total" & Forest.type.group== "Total" & Stand_Age!= "Total") %>% 
+                mutate_at(vars(tC_ac), funs(round(., 0))) #round FCI values to whole number
             age.data$Stand_Age<- factor(age.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
             age.data
         })
@@ -188,6 +170,7 @@ shinyApp(
             n_distinct(select(subset(stateData(), Forest.type.group!= "Total"), Forest.type.group))
         })  
         
+        #Pie chart of acreage  by forest type via geom_bar + coord_polar
         output$acPie<- renderPlot({
            ggplot(forestTypeData(), aes(x="", y= forestTypeData()$ac, fill= forestTypeData()$Forest.type.group)) +
                 geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
@@ -195,6 +178,7 @@ shinyApp(
                 theme_void()
         })
         
+        #pie chart of tons of carbon stored by forest type via geom_bar + coord_polar
         output$tCPie<- renderPlot({
             ggplot(forestTypeData(), aes(x="", y= forestTypeData()$tC, fill= forestTypeData()$Forest.type.group)) +
                 geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
@@ -202,45 +186,50 @@ shinyApp(
                 #scale_fill_viridis(discrete = TRUE) +
                 theme_void()
         })
+        
+        #selecting the value equal to the total acreage of all planted forests in the state
         output$stPlantedAc<- reactive({
-            format(subset(data, State %in% input$state & Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
+            format(subset(stateData(), Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
                        Forest.type.group %in% "Total")[,"ac"], big.mark=",")
         })
         
+        #calculates the additional tons of carbon per acreage stored by natural forests
         output$additionalC<- reactive({
-            (subset(data, State %in% input$state & Stand_Origin %in% "Natural" & Stand_Age %in% "Total" &
+            (subset(stateData(), Stand_Origin %in% "Natural" & Stand_Age %in% "Total" &
                        Forest.type.group %in% "Total")[,"tC_ac"]) - 
-            (subset(data, State %in% input$state & Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
+            (subset(stateData(), Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
                            Forest.type.group %in% "Total")[,"tC_ac"])
         })
-        
+        #calculates the percentage of land holding plantations in the state
         output$percentage<- reactive({
-            
-            round(((subset(data, State %in% input$state & Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
-                               Forest.type.group %in% "Total")[,"ac"])/(subset(data, State %in% input$state & Stand_Origin %in% "Total" &
+            round(((subset(stateData(), Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
+                               Forest.type.group %in% "Total")[,"ac"])/(subset(stateData(), Stand_Origin %in% "Total" &
                 Stand_Age %in% "Total" & Forest.type.group %in% "Total")[,"ac"])*100),2)
         })
         
+        #calculates the extra carbon that would be stored if the land used for plantations held natural forests instead
         output$stMissedC<- reactive({
-            plantedAc<- subset(data, State %in% input$state & Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
+            plantedAc<- subset(stateData(), Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
                                    Forest.type.group %in% "Total")[,"ac"]
-            stFCINatural<- subset(state.data, Stand_Origin== "Natural" & Stand_Age== "Total" & Forest.type.group== 
+            stFCINatural<- subset(stateData(), Stand_Origin== "Natural" & Stand_Age== "Total" & Forest.type.group== 
                                       "Total")[, "tC_ac"]
-            stPlantedC<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+            stPlantedC<- subset(stateData(), Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
                                     "Total")[, "tC"]
             format(((plantedAc* stFCINatural)- stPlantedC), big.mark = ",")
         })
         
+        #calculates how many cars are equal to the carbon emissions that would be stored if the land used for plantations held natural forests instead
         output$cars<- reactive({
-            plantedAc<- subset(data, State %in% input$state & Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
+            plantedAc<- subset(stateData(), Stand_Origin %in% "Planted" & Stand_Age %in% "Total" &
                                    Forest.type.group %in% "Total")[,"ac"]
-            stFCINatural<- subset(state.data, Stand_Origin== "Natural" & Stand_Age== "Total" & Forest.type.group== 
+            stFCINatural<- subset(stateData(), Stand_Origin== "Natural" & Stand_Age== "Total" & Forest.type.group== 
                                       "Total")[, "tC_ac"]
-            stPlantedC<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+            stPlantedC<- subset(stateData(), Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
                                     "Total")[, "tC"]
             format((((plantedAc * stFCINatural)- stPlantedC)*(44/12) * 0.192608384), big.mark = ",")
         })
         
+        #plot a bar graph to show the FCI per forest type group for natural and planted stands
         output$fakeForestsBar<- renderPlot(
             ggplot(data= fakeForestsData(), aes(x= fakeForestsData()$Forest.type.group, y= fakeForestsData()$tC_ac, fill= fakeForestsData()$Stand_Origin)) +
                 geom_col(position= position_dodge()) + 
@@ -248,7 +237,7 @@ shinyApp(
                 labs(x= "Forest Type Group", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
                 geom_text(aes(label=fakeForestsData()$tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=4) +
                 scale_fill_manual(values= c("#348045", "#B3DCBC")) + theme_minimal() +
-                theme(
+                theme( #adjusting text sizes
                     plot.title= element_text(size= 20, face= "bold"),
                     axis.text.x= element_text(angle= 45, size= 8, vjust= .99, hjust= .95, color= "black"),
                     axis.title= element_text(size= 14),
@@ -257,45 +246,51 @@ shinyApp(
                     axis.text.y= element_text(size=10, color= "black"))
         )
         
+        #plot a bar graph to show increasing FCI by stand age
         output$forestAgeBar<- renderPlot(
             ggplot(ageData(), aes(x= Stand_Age, y= tC_ac)) +
                 geom_col(fill= "darkolivegreen4") + 
                 ggtitle("FCI per Forest Age Class") +
                 labs(x= "Forest Age Class", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
                 geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=5) + theme_minimal() +
-                theme(
+                theme( #adjusting text sizes
                     plot.title= element_text(size= 20, face= "bold"),
                     axis.text.x= element_text(size= 10, color= "black", vjust= .99),
                     axis.title= element_text(size= 14),
                     axis.text.y= element_text(size=10, color= "black"))
         )
         
+        #function to calculate how much more carbon would be stored if a user inputted percentage of all forests were moved to the next age class
         output$letForestsMature<- reactive({
+            #subset data to not include total stand age rows and omit the missing values
             model.data<- subset(stateData(), stateData()$Stand_Age!= "Total") %>% na.omit()
+            #reorder the categories of stand age
             model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
-            linear.mod<- lm(tC ~ Stand_Age + ac, data= model.data)
-            predict.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") 
+            linear.mod<- lm(tC ~ Stand_Age + ac, data= model.data) #linear regression of effect on stand age and acreage on carbon storage
+            predict.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") #subset data for total acreage in each age class
             decimal<- as.numeric(input$slider)/100
-            more<- 0
-            for (x in predict.data$Stand_Age){
-                idx<- which(predict.data$Stand_Age== x)
-                ac.val<- (predict.data$ac[idx])
-                if(x!= "100+ years"){
-                    newdata<- data.frame(ac= ac.val*decimal,Stand_Age= predict.data$Stand_Age[idx+1])
-                    more<- more + as.numeric(predict(linear.mod, newdata, type="response"))
+            more<- 0 #accumulator variable
+            for (x in predict.data$Stand_Age){ 
+                idx<- which(predict.data$Stand_Age== x) #find index of current age class in for loop
+                ac.val<- (predict.data$ac[idx]) #find corresponding acreage value for the age class
+                if(x!= "100+ years"){ #condition to terminate loop at the final age class
+                    newdata<- data.frame(ac= ac.val*decimal,Stand_Age= predict.data$Stand_Age[idx+1]) #create dataframe for prediction
+                    more<- more + as.numeric(predict(linear.mod, newdata, type="response")) #predict total carbon value of the next age class and add to accumulator 
                     }
                 }
-            format(round(more, 0),  big.mark=",")
+            format(round(more, 0),  big.mark=",") #round and format value
         })
         
+        #function to calculate how much more carbon on average would be stored if a user inputted percentage of all forests were naturally generated instead of artificially planted
         output$letForestsRegenerate<- reactive({
-                model.data2<- subset(stateData(), stateData()$Stand_Origin!= "Total") %>% na.omit()
+                model.data2<- subset(stateData(), stateData()$Stand_Origin!= "Total") %>% na.omit() #exclude Stand_Origin total values and omit NAs
                 decimal<- as.numeric(input$slider)/100
-                avg<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Natural"])
-                acreage<- subset(stateData(), stateData()$Stand_Origin=="Planted" & stateData()$Stand_Age=="Total" & stateData()$Forest.type.group=="Total")[,"ac"]
+                avg<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Natural"]) #find average FCI of Natural Stands
+                acreage<- subset(stateData(), Stand_Origin=="Planted" & Stand_Age=="Total" & Forest.type.group=="Total")[,"ac"] #find total acreage of planted forests
                 format(round(avg*acreage*decimal, 0), big.mark=",")
         })
 
+    #generate downloadable report
         output$report <- downloadHandler(
             # For PDF output, change this to "report.pdf"
             filename = "report.pdf",

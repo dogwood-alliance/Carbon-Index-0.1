@@ -61,7 +61,7 @@ totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" &
 
 ft.ac.pie<- ggplot(totals.data, aes(x="", y= ac, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
-  labs(title= "Acreage per forest type", fill= "Forest Type") +
+  labs(title= "Acreage per forest type\n", fill= "Forest Type") +
   scale_fill_viridis(discrete = TRUE) +
   theme_void()
 
@@ -73,7 +73,7 @@ ft.ac.pie
 ```{r}
 ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
-  labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
+  labs(title= "Tons of carbon stored per forest type\n", fill= "Forest Type") +
   scale_fill_viridis(discrete = TRUE) +
   theme_void()
 

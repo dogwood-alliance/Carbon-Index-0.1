@@ -1,7 +1,9 @@
 ---
-title: "Forest Carbon Index Report"
+title: \vspace{-1.5cm} Forest Carbon Index Report
+geometry: margin= 1in
 output: pdf_document
-#runtime: shiny
+fontsize: 12pt
+always_allow_html: true
 params:
   data: NA
   n: NA
@@ -9,7 +11,6 @@ params:
   user: NA
   printcode: false
 ---
-
 ```{r, setup, include=FALSE}
 knitr::opts_chunk$set(echo = params$printcode, scipen=999)
 ```
@@ -21,7 +22,7 @@ library(ggplot2)
 library(modelr)
 library(shiny)
 ```
-
+\vspace{-7truemm}
 ```{r echo= FALSE}
 #subsetting data based on state picked
 state.data<- subset(params$data, State == params$stateText)
@@ -98,10 +99,9 @@ stMinFCI_Name<- as.character(subset(state.data$Forest.type.group, state.data$tC_
 stTotalFCI <- format(subset(state.data, Stand_Origin== "Total" & Stand_Age=="Total" & Forest.type.group== "Total")[,"tC_ac"], big.mark=",")
 ```
 
-`r params$stateText ` has `r stSumFt` forest types across the state, with `r formatted_MaxAc` acres being of the `r stMaxAc_Name`. There are only `r formatted_MinAc` acres of the `r stMinAc_Name`. The `r stMaxFCI_Name` has the highest FCI at `r stMaxFCI_FT` while the `r stMinFCI_Name` has the lowest FCI at `r stMinFCI_FT`.  Overall, the total FCI in `r params$stateText ` is `r stTotalFCI `.
+`r params$stateText ` has `r stSumFt` forest types across the state, with `r formatted_MaxAc` acres being of the `r stMaxAc_Name`. There are only `r formatted_MinAc` acres of the `r stMinAc_Name`. The `r stMaxFCI_Name` has the highest FCI at `r stMaxFCI_FT` while the `r stMinFCI_Name` has the lowest FCI at `r stMinFCI_FT`.  Overall, the total FCI in `r params$stateText ` is `r stTotalFCI `.   
 
-
-```{r echo= FALSE, fig.width= 5, fig.height= 3}
+```{r echo= FALSE, fig.width= 5, out.height= '32%'}
 ##subsetting data to include only Totals values
 totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
         Forest.type.group!= "Total") 
@@ -109,23 +109,22 @@ totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" &
 #Pie chart of acreage  by forest type via geom_bar + coord_polar
 ft.ac.pie<- ggplot(totals.data, aes(x="", y= ac, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
-  labs(title= "Acreage per forest type", fill= "Forest Type") +
+  labs(title= "Acreage per forest type\n", fill= "Forest Type") +
   theme_void()
 
 ft.ac.pie
 ```
- 
- 
-```{r echo= FALSE, fig.width= 5, fig.height= 3}
+\  
+```{r echo= FALSE, fig.width= 5, out.height= '32%'}
 #pie chart of tons of carbon stored by forest type via geom_bar + coord_polar
 ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
-  labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
+  labs(title= "Tons of carbon stored per forest type\n", fill= "Forest Type") +
   theme_void()
 
 ft.tC.pie
 ```
-
+  
 
 ```{r echo= FALSE}
 #if user selects that they are a scientist, show a table of total carbon, acreage, and FCI per forest type
@@ -178,12 +177,12 @@ cars<- format((((stPlantedAc * stFCINatural)- stPlantedC)*(44/12) * 0.192608384)
 
 On average, natural forests in `r params$stateText ` store `r additional` additional tons of carbon per acre than artificially regenerated forests. Across the state, there are `r formatted_PlantedAc` acres of plantations, representing `r percentage`% of total forestland.  
 
-If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  `r stMissedCarbon` more tons of carbon, equivalent to an additional `r cars` passenger vehicles on the road for one year. 
+If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  `r stMissedCarbon` more tons of carbon, equivalent to an additional `r cars` passenger vehicles on the road for one year.   
 
 ```{r echo= FALSE}
 #if user selects that they are a scientist, show an explanation of how the passenger vehicles value was calculated
 if (params$user== "Scientist"){
-  cat("*The conversion factor from tons of carbon to passenger vehicles was taken directy from the EPA's Greenhouse Gas Equivalencies Calculator, which can be found here: https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator", "\n", "Thus, the amount of passenger vehicles equal to the amount of additional carbon that would have been stored if the planted forests were of natural origin was calculated as follows: ", "\n", stMissedCarbon, " x 44/12 x 0.192608384")
+  cat("*The conversion factor from tons of carbon to passenger vehicles was taken directy from the EPA's Greenhouse Gas Equivalencies Calculator, which can be found here: https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator", "\n", "Thus, the amount of passenger vehicles equal to the amount of additional carbon that would have been stored if the planted forests were of natural origin was calculated as follows: ", "\n", stMissedCarbon, " x 44/12 x 0.192608384 \n")
 }
 ```
 
@@ -200,7 +199,7 @@ fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Sta
   labs(x= "Forest Type Group", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
   geom_text(aes(label=round(tC_ac,0)), vjust=2.2, color="white",position = position_dodge(0.9), size=3) +
   scale_fill_manual(values= c("#348045", "#B3DCBC")) + theme_minimal() +
-  theme(
+  theme( #adjusting text sizes
     plot.title= element_text(size= 20, face= "bold"),
     axis.text.x= element_text(angle= 45, size= 8, vjust= .99, hjust= .95, color= "black"),
     axis.title= element_text(size= 14),
@@ -255,7 +254,8 @@ Planted forests (plantations) usually have a short “rotation” -- the number 
 
 Every time an acre of forest is harvested, it releases carbon. If that acre is used for bioenergy, the carbon can be emitted in as little as 1-2 years. If that acre is used for more traditional forest products, like paper, pulp, or lumber, 86% of that carbon is emitted within 100 years, with just 14% remaining behind in finished products and landfills. Although plantations are generally intended for commercial harvest, a substantial amount of natural forests also get harvested every year. 
 
-Contrary to common belief, forests do not stop or significantly slow in carbon sequestration when they are old. Instead, older forests continue to store carbon well beyond 100 years of age. In fact, the carbon uptake rate is remarkably similar for both younger and older forests. As shown in the graph below, the total FCI, or tons of carbon stored per acre, in `r params$stateText` becomes greater as forests age. 
+Contrary to common belief, forests do not stop or significantly slow in carbon sequestration when they are old. Instead, older forests continue to store carbon well beyond 100 years of age. In fact, the carbon uptake rate is remarkably similar for both younger and older forests. As shown in the graph below, the total FCI, or tons of carbon stored per acre, in `r params$stateText` becomes greater as forests age.  
+\ 
 
 ```{r echo= FALSE, fig.width= 6, fig.height= 4}
 #subset data to not include total stand age rows and omit the missing values
@@ -273,19 +273,19 @@ age.bar<- ggplot(age.data, aes(x= Stand_Age, y= tC_ac)) +
   ggtitle("FCI per Forest Age Class") +
   labs(x= "Forest Age Class", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
   geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=4) + theme_minimal() +
-  theme(
-    plot.title= element_text(size= 20, face= "bold"),
+  theme( #adjusting text sizes
+    plot.title= element_text(size= 16, face= "bold"),
     axis.text.x= element_text(size= 10, color= "black", vjust= .99),
-    axis.title= element_text(size= 14),
+    axis.title= element_text(size= 12),
     axis.text.y= element_text(size=10, color= "black"))
   
 age.bar
 ```
-
+\ 
 
 **THE PAYOFF**  
 
-Reducing the amount of forest harvest in `r params$stateText ` could improve carbon sequestration and contribute to the state’s natural climate solutions. In the data, this would be observed as allowing more forests to mature to the next age class. We can model this behavior by doing some simple table calculations, and predict what the increase in carbon would be if acres managed to successfully grow into the next age class.
+Reducing the amount of forest harvest in `r params$stateText ` could improve carbon sequestration and contribute to the state’s natural climate solutions. In the data, this would be observed as allowing more forests to mature to the next age class. We can model this behavior by doing some simple table calculations, and predict what the increase in carbon would be if acres managed to successfully grow into the next age class.  
 ```{r echo= FALSE}
 #linear regression of effect on stand age and acreage on carbon storage
 linear.mod<- lm(tC ~ Stand_Age + ac, data= model.data)
@@ -294,13 +294,14 @@ linear.mod<- lm(tC ~ Stand_Age + ac, data= model.data)
 letForestsMature<- function(percentage){
   predict.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") 
   decimal<- as.numeric(percentage/100)
-  more<- 0
-  for (x in predict.data$Stand_Age){
-    idx<- which(predict.data$Stand_Age== x)
-    ac.val<- (predict.data$ac[idx])
-    if(x!= "100+ years"){
+  more<- 0 #accumulator variable
+  for (x in predict.data$Stand_Age){ 
+    idx<- which(predict.data$Stand_Age== x) #find index of current age class in for loop
+    ac.val<- (predict.data$ac[idx]) #find corresponding acreage value for the age class
+    if(x!= "100+ years"){ #condition to terminate loop at the final age class
       newdata<- data.frame(ac= ac.val*decimal,Stand_Age= predict.data$Stand_Age[idx+1]) #create dataframe of values for prediction
-      more<- more + as.numeric(predict(linear.mod, newdata, type="response"))
+      #predict total carbon value of the next age class and add to accumulator
+      more<- more + as.numeric(predict(linear.mod, newdata, type="response")) 
     }
   }
   format(round(more, 0),  big.mark=",")
@@ -311,23 +312,11 @@ twenty.five.old<- letForestsMature(25)
 fifty.old<- letForestsMature(50)
 ```
 
-* If the state moved 10% of all forests to the next age class, it would result in an additional `r ten.old` tons of carbon sequestered in `r params$stateText `’s forests.  
+* If the state moved **10%** of all forests to the next age class, it would result in an additional **`r ten.old`** tons of carbon sequestered in `r params$stateText `’s forests.  
 
-* If the state moved 25% of all forests to the next age class, it would result in an additional `r twenty.five.old` tons of carbon sequestered in `r params$stateText `’s forests.  
+* If the state moved **25%** of all forests to the next age class, it would result in an additional **`r twenty.five.old`** tons of carbon sequestered in `r params$stateText `’s forests.  
 
-* If the state moved 50% of all forests to the next age class, it would result in an additional `r fifty.old` tons of carbon sequestered in `r params$stateText `’s forests.  
-
-```{r}
-#Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Age Class
-#	Percentage slider 0-100. Takes X % of previous age class and sticks it in the next.
-#Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
-# sliderInput("percent_slider", label = "Percentage of forests moved to the next age class:",
-#               min = 0, max = 100, value = 10, step = 5)
-# 
-# renderText({
-#    paste("If the state moved ", input$percent_slider, "% of all forests to the next age class, it would result in an additional ", letForestsMature(input$percent_slider), " tons of carbon sequestered.")
-# })
-```
+* If the state moved **50%** of all forests to the next age class, it would result in an additional **`r fifty.old`** tons of carbon sequestered in `r params$stateText `’s forests.  
 
 ```{r echo= FALSE}
 #if user selects that they are a scientist, show explanation of how the carbon values are calculated
@@ -343,10 +332,11 @@ Although planting trees does regenerate the area more quickly, there are lasting
 ```{r}
 #function to calculate how much more carbon on average would be stored if a user inputted percentage of all forests were naturally generated instead of artificially planted
 letForestsRegenerate<- function(percentage){
-  model.data2<- subset(state.data, Stand_Origin!= "Total") %>% na.omit()
+  model.data2<- subset(state.data, Stand_Origin!= "Total") %>% na.omit() #exclude Stand_Origin total values and omit NAs
   decimal<- as.numeric(percentage/100)
-  avg<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Natural"])
-  acreage<- subset(state.data, Stand_Origin=="Planted" & Stand_Age=="Total" & Forest.type.group=="Total")[,"ac"]
+  avg<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Natural"]) #find average FCI of Natural Stands
+  #find total acreage of planted forests
+  acreage<- subset(state.data, Stand_Origin=="Planted" & Stand_Age=="Total" & Forest.type.group=="Total")[,"ac"] 
   format(round(avg*acreage*decimal, 0), big.mark=",")
 }
 
@@ -359,24 +349,11 @@ fifty.natural<-  letForestsRegenerate(50)
 **THE PAYOFF**
 Although we cannot choose individual acres, we can see the potential carbon sequestration difference if more acres were naturally instead of artificially regenerated.  
 
-* If the state had 10% more naturally regenerated forests, its forests would sequester, on average, `r ten.natural` more tons of carbon.  
+* If the state had **10%** more naturally regenerated forests, its forests would sequester, on average, **`r ten.natural`** more tons of carbon.  
 
-* If the state had 25% more naturally regenerated forests, its forests would sequester, on average, `r twenty.five.natural` more tons of carbon.  
+* If the state had **25%** more naturally regenerated forests, its forests would sequester, on average, **`r twenty.five.natural`** more tons of carbon.  
 
-* If the state had 50% more naturally regenerated forests, its forests would sequester, on average, `r fifty.natural` more tons of carbon.  
-
-```{r echo= FALSE}
-#Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Stand Origin
-#	Percentage slider 0-100. Takes X % of artificial and changes it to natural.
-
-    # sliderInput("percent_slider2", label = "Percentage of forests moved to naturally regenerated:",
-    #               min = 0, max = 100, value = 10, step = 5)
-    # #Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
-    # 
-    # renderText({
-    #    paste("If the state moved ", input$percent_slider2, "% of artificially planted forests in the state to naturally regenerated, it would result in an additional ", letForestsRegenerate(input$percent_slider), " tons of carbon sequestered.")
-    # })
-```
+* If the state had **50%** more naturally regenerated forests, its forests would sequester, on average, **`r fifty.natural`** more tons of carbon.  
 
 ```{r echo= FALSE}
 #if user selects that they are a scientist, show explanation of how the carbon values are calculated
@@ -412,7 +389,21 @@ We are not legislators, however, we can envision a reduction in forest harvest t
 
 ## Next Steps & Resources 
 
-Do you want to act on this information, but you’re not sure where to go? We’ve got you covered! Here are some links…
+Do you want to act on this information, but you’re not sure where to go? We’ve got you covered! Here are some links.  
 
-All data gathered from:
-USDA Forest Service, Forest Inventory and Analysis Program, Tue Mar 31 13:53:53 GMT 2020. Forest Inventory EVALIDator web-application Version 1.8.0.01. St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. [Available only on internet: http://apps.fs.usda.gov/Evalidator/evalidator.jsp]
+* Read the [\textcolor{blue}{Carbon Canopy Report}][1] which discusses the use of forest carbon markets to incentivize forest protection  
+* Take the [\textcolor{blue}{Stand4Forests Pledge}][2] to join the movement of people advocating for forest protection
+
+Here is further reading about the importance of forest carbon sequestration:  
+
+* [\textcolor{blue}{Seeing the Forest: Nature's Solution to Climate Change}][3]
+* [\textcolor{blue}{Industry Impact on US Forests}][4]  
+\
+*All data gathered from:* 
+  
+USDA Forest Service, Forest Inventory and Analysis Program. Forest Inventory EVALIDator web-application Version 1.8.0.01. St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. Available only on internet: http://apps.fs.usda.gov/Evalidator/evalidator.jsp
+
+[1]: https://www.dogwoodalliance.org/wp-content/uploads/2017/08/CC-Lessons-Learned-Report-for-Web.pdf
+[2]: https://www.dogwoodalliance.org/actions/stand4forests/
+[3]: https://stand4forests.org/wp-content/uploads/2018/09/The-Climate-Plan.pdf 
+[4]: https://www.dogwoodalliance.org/wp-content/uploads/2018/08/Industry-Impacts-on-US-Forests.pdf 
