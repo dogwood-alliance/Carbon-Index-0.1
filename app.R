@@ -8,11 +8,10 @@ library(ggplot2)
 library(shinyWidgets)
 
 ## read in data 
-data <- read.csv("CIP_Type1_2020-04-07.csv", header=T, na.strings=c("-")) 
-#data$ac<- as.numeric(as.character(data$ac))
-#data$tC<- as.numeric(as.character(data$tC))
-head(data)
-str(data)
+d <- read.csv("CIP_Type1_2020-04-07.csv", header=T, na.strings=c("-")) 
+d$State<- as.character(d$State)
+data<-subset(d, State!= "Texas" & State!= "Oklahoma" & State!= "Missouri")
+data$State<- factor(data$State)
 
 ##UI Set Up
 shinyApp(
@@ -117,9 +116,15 @@ shinyApp(
         
         fakeForestsData<- reactive({
             #Filter data to include only total Stand Age rows for bar graph showing FCI of natural and planted stands per forest type group 
-            d<- subset(stateData(), Stand_Age %in% "Total" & Stand_Origin!= "Total") %>% 
+            d<- subset(stateData(), Stand_Age == "Total" & Stand_Origin!= "Total") %>% 
                 mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>%  #replace NA values with )
                 mutate_at(vars(tC_ac), funs(round(., 0))) #round FCI column to whole number
+            
+            #reorder the forest type groups so that the Total value comes first followed by specific groups in alphabetical order
+            level_order<- c('Total', 'Aspen / birch group', 'Elm / ash / cottonwood group', 'Exotic hardwoods group', 'Exotic softwoods group',
+                            'Loblolly / shortleaf pine group', 'Longleaf / slash pine group', 'Maple / beech / birch group', 'Nonstocked', 'Oak / gum / cypress group', 'Oak / hickory group', 'Oak / pine group', 'Other eastern softwoods group', 'Other hardwoods group', 'Pinyon juniper group', 'Spruce / fir group', 'Tropical hardwoods group', 'White / red / jack pine group', 'Woodland hardwoods group')
+            d$Forest.type.group<- factor(d$Forest.type.group, levels= level_order)
+            
             d
         })
         
@@ -174,7 +179,7 @@ shinyApp(
         output$acPie<- renderPlot({
            ggplot(forestTypeData(), aes(x="", y= forestTypeData()$ac, fill= forestTypeData()$Forest.type.group)) +
                 geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
-                labs(title= "Acreage per forest type", fill= "Forest Type") +
+                labs(title= "Acreage per forest type\n", fill= "Forest Type") +
                 theme_void()
         })
         
@@ -182,7 +187,7 @@ shinyApp(
         output$tCPie<- renderPlot({
             ggplot(forestTypeData(), aes(x="", y= forestTypeData()$tC, fill= forestTypeData()$Forest.type.group)) +
                 geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
-                labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
+                labs(title= "Tons of carbon stored per forest type\n", fill= "Forest Type") +
                 #scale_fill_viridis(discrete = TRUE) +
                 theme_void()
         })
