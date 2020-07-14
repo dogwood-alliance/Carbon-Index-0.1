@@ -21,6 +21,7 @@ library(dplyr)
 library(ggplot2)
 library(modelr)
 library(shiny)
+library(knitr)
 ```
 \vspace{-7truemm}
 ```{r echo= FALSE}
@@ -131,7 +132,7 @@ ft.tC.pie
 if (params$user== "Scientist"){
   totals.table<- totals.data %>% select(-c(Stand_Age, Stand_Origin, State)) %>% arrange((desc(tC))) %>%
   rename("Forest Type"= Forest.type.group, "Carbon Stored (tons)"= tC, "Acreage"= ac, "Forest Carbon Index"= 
-  tC_ac) %>% datatable()
+  tC_ac) %>% kable()
   totals.table
 } 
 ```
@@ -179,10 +180,10 @@ On average, natural forests in `r params$stateText ` store `r additional` additi
 
 If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  `r stMissedCarbon` more tons of carbon, equivalent to an additional `r cars` passenger vehicles on the road for one year.   
 
-```{r echo= FALSE}
+```{r echo= FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 #if user selects that they are a scientist, show an explanation of how the passenger vehicles value was calculated
 if (params$user== "Scientist"){
-  cat("*The conversion factor from tons of carbon to passenger vehicles was taken directy from the EPA's Greenhouse Gas Equivalencies Calculator, which can be found here: https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator", "\n", "Thus, the amount of passenger vehicles equal to the amount of additional carbon that would have been stored if the planted forests were of natural origin was calculated as follows: ", "\n", stMissedCarbon, " x 44/12 x 0.192608384 \n")
+  cat("*The conversion factor from tons of carbon to passenger vehicles was taken ", "\n", "directly from the EPA's Greenhouse Gas Equivalencies Calculator, which\n can be found here: \n", "https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator", "\n", "Thus, the amount of passenger vehicles equal to the amount of additional", "\n", "carbon that would have been stored if the planted forests were of natural", "\n", "origin was calculated as follows: ", stMissedCarbon, " x 44/12 x 0.192608384 \n")
 }
 ```
 
@@ -220,7 +221,7 @@ fake.forests.bar
 if (params$user== "Scientist"){
   ft.table<- ft.data %>% select(-c(State, Stand_Age, tC, ac)) %>% arrange(Stand_Origin, desc(tC_ac)) %>% 
   rename("Forest Type"= Forest.type.group, "Forest Carbon Index"= tC_ac, "Stand Origin"= Stand_Origin) %>%  
-  datatable()
+  kable()
   ft.table
 } 
 ```
@@ -270,7 +271,7 @@ model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-
 
 #subset for totals values and round the FCI value
 age.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") %>% 
-  mutate_at(vars(tC_ac), funs(round(., 0)))
+  mutate_at(vars(tC_ac), list(~round(., 0)))
 
 #plot a bar graph to show increasing FCI by stand age
 age.bar<- ggplot(age.data, aes(x= Stand_Age, y= tC_ac)) +
@@ -323,10 +324,10 @@ fifty.old<- letForestsMature(50)
 
 * If the state moved **50%** of all forests to the next age class, it would result in an additional **`r fifty.old`** tons of carbon sequestered in `r params$stateText `’s forests.  
 
-```{r echo= FALSE}
+```{r echo= FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 #if user selects that they are a scientist, show explanation of how the carbon values are calculated
 if (params$user== "Scientist"){
-  cat("*The above values were calculated by generating a linear model of tons of carbon stored based on forest acreage and age in the state. This model was then used to predict how much more carbon would be stored if x percent of each forest age class were moved to the next age class.")
+  cat("*The above values were calculated by generating a linear model of tons of", "\n", "carbon stored based on forest acreage and age in the state. This model", "\n", "was then used to predict how much more carbon would be stored if x", "\n", "percent of each forest age class were moved to the next age class.")
 }
 ```
 
@@ -360,10 +361,10 @@ Although we cannot choose individual acres, we can see the potential carbon sequ
 
 * If the state had **50%** more naturally regenerated forests, its forests would sequester, on average, **`r fifty.natural`** more tons of carbon.  
 
-```{r echo= FALSE}
+```{r echo= FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 #if user selects that they are a scientist, show explanation of how the carbon values are calculated
 if (params$user== "Scientist"){
-  cat("*The above values were calculated by calculating the average FCI of naturally generated forests in the state. This average FCI value was then multiplied by X percent of the total acreage of human-planted forests in the state to yield the total carbon that would be stored if that amount of forest was naturally generated.")
+  cat("*The above values were calculated by determining the average FCI of", "\n", "naturally generated forests in the state. This average FCI value was then", "\n", "multiplied by X percent of the total acreage of human-planted forests", "\n", "in the state to yield the total carbon that would be stored if that", "\n", "area of forest was naturally generated.")
 }
 ```
 
@@ -404,6 +405,7 @@ Here is further reading about the importance of forest carbon sequestration:
 * [\textcolor{blue}{Seeing the Forest: Nature's Solution to Climate Change}][3]
 * [\textcolor{blue}{Industry Impact on US Forests}][4]  
 \
+  
 *All data gathered from:* 
   
 USDA Forest Service, Forest Inventory and Analysis Program. Forest Inventory EVALIDator web-application Version 1.8.0.01. St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. Available only on internet: http://apps.fs.usda.gov/Evalidator/evalidator.jsp

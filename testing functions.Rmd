@@ -14,6 +14,7 @@ library(ggplot2)
 library(viridis)
 library(GGally)
 library(modelr)
+library(knitr)
 ```
 
 # load data
@@ -84,7 +85,7 @@ ft.tC.pie
 ```{r}
 totals.table<- totals.data %>% select(-c(Stand_Age, Stand_Origin, State)) %>% arrange((desc(tC))) %>%
   rename("Forest Type"= Forest.type.group, "Carbon Stored (tons)"= tC, "Acreage"= ac, "Forest Carbon Index"= 
-  tC_ac) %>% datatable()
+  tC_ac) %>% kable()
 totals.table
 ```
 
@@ -209,8 +210,8 @@ model.data<- subset(state.data, Stand_Age!= "Total")  %>% na.omit()
 model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
 
 age.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") %>% 
-  mutate_at(vars(tC_ac), funs(round(., 0)))
-
+  mutate_at(vars(tC_ac), list(~round(., 0)))
+age.data
 
 age.bar<- ggplot(age.data, aes(x= Stand_Age, y= tC_ac)) +
   geom_col(fill= "darkolivegreen4") + 
