@@ -1,6 +1,9 @@
 ---
-title: "Forest Carbon Index Report"
-output: html_document
+title: \vspace{-1.5cm} Forest Carbon Index Report
+geometry: margin= 1in
+output: pdf_document
+fontsize: 12pt
+always_allow_html: true
 params:
   data: NA
   n: NA
@@ -8,7 +11,6 @@ params:
   user: NA
   printcode: false
 ---
-
 ```{r, setup, include=FALSE}
 knitr::opts_chunk$set(echo = params$printcode, scipen=999)
 ```
@@ -17,19 +19,23 @@ knitr::opts_chunk$set(echo = params$printcode, scipen=999)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
+library(modelr)
+library(shiny)
+library(knitr)
 ```
-
+\vspace{-7truemm}
 ```{r echo= FALSE}
 #subsetting data based on state picked
 state.data<- subset(params$data, State == params$stateText)
 
+#selecting value equal to total acreage in state
 stTotalAc <- format( round( subset(state.data,
                       Stand_Origin %in% "Total" &
                       Stand_Age %in% "Total" &
                       Forest.type.group %in% "Total")[,"ac"], #endsubset
                     0), #endround 
                 big.mark=",")
-
+#selecting value equal to total carbon in state
 stTotalC <- format( round( subset(state.data, 
                     Stand_Origin %in% "Total" &
                     Stand_Age %in% "Total" &
@@ -37,185 +43,212 @@ stTotalC <- format( round( subset(state.data,
                   0), #endround 
               big.mark=",")
 
-stTotalFCI <- subset(state.data, 
+#selecting value equal to total FCI in state
+stTotalFCI <- round(subset(state.data, 
                                Stand_Origin %in% "Total" &
                                Stand_Age %in% "Total" &
-                               Forest.type.group %in% "Total")[,"tC_ac"]
+                               Forest.type.group %in% "Total")[,"tC_ac"], 2)
             
 ```
 ## `r params$stateText `  
-
 
 The great state of `r params$stateText ` has `r stTotalAc` total acres of forestland, which store `r stTotalC` tons of carbon, for a total Forest Carbon Index (FCI) of `r stTotalFCI`. 
 
 ## Forest Types  
 ```{r echo= FALSE}
-stSumFt<- as.numeric(n_distinct(state.data$Forest.type.group))
+#finding the number of distinct forest types in the state
+stSumFt<- n_distinct(select(subset(state.data, Forest.type.group!= "Total"), Forest.type.group))
 
+#selecting the value equal to the acreage of the most-represented forest type in the state
 stMaxAc_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
         Forest.type.group!= "Total") %>% select(ac) %>% max() 
 
+#formatted max acreage value to text
 formatted_MaxAc<- format(stMaxAc_FT, big.mark = ",")
 
+#name of the most-represented forest type in the state
 stMaxAc_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMaxAc_FT)[1])
 
+#selecting the value equal to the highest FCI of all forest type FCIs
 stMaxFCI_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
-        Forest.type.group!= "Total") %>% select(tC_ac) %>% max()
+        Forest.type.group!= "Total") %>% select(tC_ac) %>% max() %>% round(digits= 2)
 
+#name of the forest type with the highest FCI
 stMaxFCI_Name<- as.character(subset(state.data$Forest.type.group, state.data$tC_ac== stMaxFCI_FT)[1])
 ```
 
 
 ```{r echo= FALSE}
+#selecting the value equal to the acreage of the least-represented forest type in the state
 stMinAc_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
         Forest.type.group!= "Total") %>% select(ac) %>% min() 
-    
+
+#formatted minimum acreage value to text 
 formatted_MinAc<- format(stMinAc_FT, big.mark=",")
 
+#name of the least-represented forest type in the state
 stMinAc_Name<- as.character(subset(state.data$Forest.type.group, state.data$ac== stMinAc_FT)[1])
     
+#selecting the value equal to the lowest FCI of all forest type FCIs
 stMinFCI_FT<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
-        Forest.type.group!= "Total") %>% select(tC_ac) %>% min()
+        Forest.type.group!= "Total") %>% select(tC_ac) %>% min() %>% round(digits= 2)
 
+#name of the forest type with the lowest FCI
 stMinFCI_Name<- as.character(subset(state.data$Forest.type.group, state.data$tC_ac== stMinFCI_FT)[1])
 
+#selecting and formatting to text the value equal to total FCI in state
 stTotalFCI <- format(subset(state.data, Stand_Origin== "Total" & Stand_Age=="Total" & Forest.type.group== "Total")[,"tC_ac"], big.mark=",")
 ```
 
-`r params$stateText ` has `r stSumFt` forest types across the state, with `r formatted_MaxAc` acres being of the `r stMaxAc_Name`. There are only `r formatted_MinAc` acres of the `r stMinAc_Name`. The `r stMaxFCI_Name` has the highest FCI at `r stMaxFCI_FT` while the `r stMinFCI_Name` has the lowest FCI at `r stMinFCI_FT`.  Overall, the total FCI in `r params$stateText ` is `r stTotalFCI `.
+`r params$stateText ` has `r stSumFt` forest types across the state, with `r formatted_MaxAc` acres being of the `r stMaxAc_Name`. There are only `r formatted_MinAc` acres of the `r stMinAc_Name`. The `r stMaxFCI_Name` has the highest FCI at `r stMaxFCI_FT` while the `r stMinFCI_Name` has the lowest FCI at `r stMinFCI_FT`.  Overall, the total FCI in `r params$stateText ` is `r stTotalFCI `.   
 
-
-```{r echo= FALSE, fig.width= 6, fig.height= 4}
+```{r echo= FALSE, fig.width= 5, out.height= '32%'}
 ##subsetting data to include only Totals values
 totals.data<- subset(state.data, Stand_Origin== "Total" & Stand_Age== "Total" & 
         Forest.type.group!= "Total") 
 
-#Pie charts of acreage and tons of carbon by forest type
+#Pie chart of acreage  by forest type via geom_bar + coord_polar
 ft.ac.pie<- ggplot(totals.data, aes(x="", y= ac, fill= Forest.type.group)) +
   geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
-  labs(title= "Acreage per forest type", fill= "Forest Type") +
-  scale_fill_viridis(discrete = TRUE) +
-  theme_void()
-
-ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
-  geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
-  labs(title= "Tons of carbon stored per forest type", fill= "Forest Type") +
-  scale_fill_viridis(discrete = TRUE) +
+  labs(title= "Acreage per forest type\n", fill= "Forest Type") +
   theme_void()
 
 ft.ac.pie
+```
+\  
+```{r echo= FALSE, fig.width= 5, out.height= '32%'}
+#pie chart of tons of carbon stored by forest type via geom_bar + coord_polar
+ft.tC.pie<- ggplot(totals.data, aes(x="", y= tC, fill= Forest.type.group)) +
+  geom_bar(width=1, stat= "identity") + coord_polar("y", start=0) +
+  labs(title= "Tons of carbon stored per forest type\n", fill= "Forest Type") +
+  theme_void()
+
 ft.tC.pie
 ```
+  
 
 ```{r echo= FALSE}
+#if user selects that they are a scientist, show a table of total carbon, acreage, and FCI per forest type
 if (params$user== "Scientist"){
   totals.table<- totals.data %>% select(-c(Stand_Age, Stand_Origin, State)) %>% arrange((desc(tC))) %>%
   rename("Forest Type"= Forest.type.group, "Carbon Stored (tons)"= tC, "Acreage"= ac, "Forest Carbon Index"= 
-  tC_ac) %>% datatable()
-} else{
-  totals.table<- ""
-}
-totals.table
+  tC_ac) %>% kable()
+  totals.table
+} 
 ```
 
 
 ## Fake Forests  
 ```{r echo= FALSE}
+#selecting the value equal to the total FCI of all natural forests in the state
 stFCINatural<- subset(state.data, Stand_Origin== "Natural" & Stand_Age== "Total" & Forest.type.group== 
     "Total")[, "tC_ac"]
 
+#selecting the value equal to the total FCI of all planted forests in the state
 stFCIPlanted<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total")[, "tC_ac"]
 
+#selecting the value equal to the total acreage of all planted forests in the state
 stPlantedAc<-subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total")[, "ac"]
 
+#formatted total plantation acreage to text
 formatted_PlantedAc<- format(stPlantedAc, big.mark = ",")
 
+##selecting the value equal to the total carbon of all planted forests in the state
 stPlantedC<- subset(state.data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total")[, "tC"]
 
+#calculates the extra carbon that would be stored if the land used for plantations held natural forests instead
 stMissedCarbon<- format(((stPlantedAc * stFCINatural)- stPlantedC), big.mark = ",")
 
-additional<- stFCINatural - stFCIPlanted
+#calculates the additional tons of carbon per acreage stored by natural forests
+additional<- round(stFCINatural - stFCIPlanted, digits= 2)
 
 totalAc<- subset(state.data, Stand_Origin %in% "Total" &
                       Stand_Age %in% "Total" &
                       Forest.type.group %in% "Total")[,"ac"]
 
-percentage<- round((stPlantedAc/totalAc)*100, 0)
+#the percent of land holding plantations in the state
+percentage<- round((stPlantedAc/totalAc)*100, 2)
 
+#calculates how many cars are equal to the carbon emissions that would be stored if the land used for plantations held natural forests instead
 cars<- format((((stPlantedAc * stFCINatural)- stPlantedC)*(44/12) * 0.192608384), big.mark = ",")
 ```
 
 On average, natural forests in `r params$stateText ` store `r additional` additional tons of carbon per acre than artificially regenerated forests. Across the state, there are `r formatted_PlantedAc` acres of plantations, representing `r percentage`% of total forestland.  
 
-If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  `r stMissedCarbon` more tons of carbon, equivalent to an additional `r cars` passenger vehicles on the road for one year. 
+If those acres of planted forests had been naturally regenerated, they would currently be storing approximately  `r stMissedCarbon` more tons of carbon, equivalent to an additional `r cars` passenger vehicles on the road for one year.   
 
-```{r echo= FALSE}
+```{r echo= FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+#if user selects that they are a scientist, show an explanation of how the passenger vehicles value was calculated
 if (params$user== "Scientist"){
-  cat("*The conversion factor from tons of carbon to passenger vehicles was taken directy from the EPA's Greenhouse Gas Equivalencies Calculator, which can be found here: https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator", "\n", "Thus, the amount of passenger vehicles equal to the amount of additional carbon that would have been stored if the planted forests were of natural origin was calculated as follows: ", "\n", stMissedCarbon, " x 44/12 x 0.192608384")
+  cat("*The conversion factor from tons of carbon to passenger vehicles was taken ", "\n", "directly from the EPA's Greenhouse Gas Equivalencies Calculator, which\n can be found here: \n", "https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator", "\n", "Thus, the amount of passenger vehicles equal to the amount of additional", "\n", "carbon that would have been stored if the planted forests were of natural", "\n", "origin was calculated as follows: ", stMissedCarbon, " x 44/12 x 0.192608384 \n")
 }
 ```
 
 
-```{r echo= FALSE}
-ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total")
-ft.data[is.na(ft.data)]<-0 
+```{r echo= FALSE, fig.width= 10, fig.height= 6}
+#subset data to include only total Stand Age rows
+ft.data<- subset(state.data, Stand_Origin!= "Total" & Stand_Age== "Total")  %>% 
+  mutate_if(is.numeric, ~replace(., is.na(.), 0))
 
+#reorder the forest type groups so that the Total value comes first followed by specific groups in alphabetical order
+level_order<- c('Total', 'Aspen / birch group', 'Elm / ash / cottonwood group', 'Exotic hardwoods group', 'Exotic softwoods group',
+  'Loblolly / shortleaf pine group', 'Longleaf / slash pine group', 'Maple / beech / birch group', 'Nonstocked', 'Oak / gum / cypress group', 'Oak / hickory group', 'Oak / pine group', 'Other eastern softwoods group', 'Other hardwoods group', 'Pinyon juniper group', 'Spruce / fir group', 'Tropical hardwoods group', 'White / red / jack pine group', 'Woodland hardwoods group')
+ft.data$Forest.type.group<- factor(ft.data$Forest.type.group, levels= level_order)
+
+#plot a bar graph to show the FCI per forest type group for natural and planted stands
 fake.forests.bar<- ggplot(ft.data, aes(x= Forest.type.group, y= tC_ac, fill= Stand_Origin)) +
   geom_col(position= position_dodge()) + 
   ggtitle("FCI per Forest Type Group") +
   labs(x= "Forest Type Group", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
-  geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=2) +
+  geom_text(aes(label=round(tC_ac,0)), vjust=2.2, color="white",position = position_dodge(0.9), size=3) +
   scale_fill_manual(values= c("#348045", "#B3DCBC")) + theme_minimal() +
-  theme(
+  theme( #adjusting text sizes
     plot.title= element_text(size= 20, face= "bold"),
-    axis.text.x= element_text(angle= 45, size= 8, vjust= .95, hjust= .95),
-    axis.title= element_text(size= 14))
+    axis.text.x= element_text(angle= 45, size= 8, vjust= .99, hjust= .95, color= "black"),
+    axis.title= element_text(size= 14),
+    legend.title= element_text(size= 12),
+    legend.text = element_text(size= 10),
+    axis.text.y= element_text(size=10, color= "black"))
 
 fake.forests.bar
 ```
 
 ```{r echo= FALSE}
+#if user selects that they are a scientist, show a table of FCI per forest type group and stand origin
 if (params$user== "Scientist"){
   ft.table<- ft.data %>% select(-c(State, Stand_Age, tC, ac)) %>% arrange(Stand_Origin, desc(tC_ac)) %>% 
   rename("Forest Type"= Forest.type.group, "Forest Carbon Index"= tC_ac, "Stand Origin"= Stand_Origin) %>%  
-  datatable()
-} else{
-  ft.table<- ""
-}
-ft.table
+  kable()
+  ft.table
+} 
 ```
 
 ## How Does `r params$stateText ` Compare?  
 
 ```{r echo=FALSE}
-ACrank<- subset(data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+#calculate the forest acreage ranking of the state out of 11 states
+ACrank<- subset(params$data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% arrange((desc(ac))) %>% pull(State) %in% params$stateText %>% which 
 
-TCrank<- subset(data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+#calculate the carbon storage ranking of the state out of 11 states
+TCrank<- subset(params$data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% select(tC, State) %>% arrange((desc(tC))) %>% pull(State) %in% params$stateText %>% which 
 
-FCIrank<- subset(data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
+#calculate the FCI ranking of the state out of 11 states
+FCIrank<- subset(params$data, Stand_Origin== "Planted" & Stand_Age== "Total" & Forest.type.group== 
     "Total") %>% select(tC_ac, State) %>% arrange((desc(tC_ac))) %>% pull(State) %in% params$stateText %>% which 
 ```
 
 In the fourteen state region of the South, `r params$stateText ` ranks:   
   
-* `r ACrank` of 14 in Acres of Forestland   
+* `r ACrank` of 11 in Acres of Forestland   
 
-* `r TCrank` of 14 in Tons of Carbon Sequestered in Forestland  
+* `r TCrank` of 11 in Tons of Carbon Sequestered in Forestland  
 
-* `r FCIrank` of 14 in Forest Carbon Index (FCI)  
-
-Here’s how the forest types of `r params$stateText ` rank against other states:
-
-Table: FCI Value, Forest Type Row, State Column
-
-Table: TC Value, Forest Type Row, State Column
-
-Table: AC Value, Forest Type Row, State Column
+* `r FCIrank` of 11 in Forest Carbon Index (FCI)  
 
 ## Natural Climate Solutions
 
@@ -227,44 +260,112 @@ Planted forests (plantations) usually have a short “rotation” -- the number 
 
 Every time an acre of forest is harvested, it releases carbon. If that acre is used for bioenergy, the carbon can be emitted in as little as 1-2 years. If that acre is used for more traditional forest products, like paper, pulp, or lumber, 86% of that carbon is emitted within 100 years, with just 14% remaining behind in finished products and landfills. Although plantations are generally intended for commercial harvest, a substantial amount of natural forests also get harvested every year. 
 
-Contrary to common belief, older forests do not stop or significantly slow carbon sequestration. Instead, older forests continue to store carbon well beyond 100 years of age. In fact, the carbon uptake rate is remarkably similar for both younger and older forests. 
+Contrary to common belief, forests do not stop or significantly slow in carbon sequestration when they are old. Instead, older forests continue to store carbon well beyond 100 years of age. In fact, the carbon uptake rate is remarkably similar for both younger and older forests. As shown in the graph below, the total FCI, or tons of carbon stored per acre, in `r params$stateText` becomes greater as forests age.  
+\ 
+
+```{r echo= FALSE, fig.width= 6, fig.height= 4}
+#subset data to not include total stand age rows and omit the missing values
+model.data<- subset(state.data, Stand_Age!= "Total") %>% na.omit()
+#order the categories of stand age
+model.data$Stand_Age<- factor(model.data$Stand_Age, levels= c("0-20 years", "21-40 years", "41-60 years", "61-80 years", "81-100 years", "100+ years"))
+
+#subset for totals values and round the FCI value
+age.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") %>% 
+  mutate_at(vars(tC_ac), list(~round(., 0)))
+
+#plot a bar graph to show increasing FCI by stand age
+age.bar<- ggplot(age.data, aes(x= Stand_Age, y= tC_ac)) +
+  geom_col(fill= "darkolivegreen4") + 
+  ggtitle("FCI per Forest Age Class") +
+  labs(x= "Forest Age Class", y= "Forest Carbon Index (FCI)\n", fill= "Stand Origin") +
+  geom_text(aes(label=tC_ac), vjust=2.2, color="white",position = position_dodge(0.9), size=4) + theme_minimal() +
+  theme( #adjusting text sizes
+    plot.title= element_text(size= 16, face= "bold"),
+    axis.text.x= element_text(size= 10, color= "black", vjust= .99),
+    axis.title= element_text(size= 12),
+    axis.text.y= element_text(size=10, color= "black"))
+  
+age.bar
+```
+\ 
 
 **THE PAYOFF**  
 
-Reducing the amount of forest harvest in `r params$stateText ` could improve carbon sequestration and contribute to the state’s natural climate solutions. In the data, this would be observed as allowing more forests to mature to the next age class. We can model this behavior by doing some simple table calculations, and predict what the increase in carbon would be if acres managed to successfully grow into the next age class.
-
-* If the state moved 10% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
-
-* If the state moved 25% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
-
-* If the state moved 50% of all forests to the next age class, it would result in an additional <<CALC>> tons of carbon sequestered in `r params$stateText `’s forests.  
-
+Reducing the amount of forest harvest in `r params$stateText ` could improve carbon sequestration and contribute to the state’s natural climate solutions. In the data, this would be observed as allowing more forests to mature to the next age class. We can model this behavior by doing some simple table calculations, and predict what the increase in carbon would be if acres managed to successfully grow into the next age class.  
 ```{r echo= FALSE}
-#Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Age Class
-#	Percentage slider 0-100. Takes X % of previous age class and sticks it in the next.
+#linear regression of effect on stand age and acreage on carbon storage
+linear.mod<- lm(tC ~ Stand_Age + ac, data= model.data)
 
-#Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
+#function to calculate how much more carbon would be stored if a user inputted percentage of all forests were moved to the next age class
+letForestsMature<- function(percentage){
+  predict.data<- subset(model.data, Stand_Origin== "Total" & Forest.type.group== "Total") 
+  decimal<- as.numeric(percentage/100)
+  more<- 0 #accumulator variable
+  for (x in predict.data$Stand_Age){ 
+    idx<- which(predict.data$Stand_Age== x) #find index of current age class in for loop
+    ac.val<- (predict.data$ac[idx]) #find corresponding acreage value for the age class
+    if(x!= "100+ years"){ #condition to terminate loop at the final age class
+      newdata<- data.frame(ac= ac.val*decimal,Stand_Age= predict.data$Stand_Age[idx+1]) #create dataframe of values for prediction
+      #predict total carbon value of the next age class and add to accumulator
+      more<- more + as.numeric(predict(linear.mod, newdata, type="response")) 
+    }
+  }
+  format(round(more, 0),  big.mark=",")
+}
+#use the letForestsMature function to calculate how much more carbon would be stored for 10, 25, and 50 % of forests moved to the next age class
+ten.old<- letForestsMature(10)
+twenty.five.old<- letForestsMature(25)
+fifty.old<- letForestsMature(50)
 ```
+
+* If the state moved **10%** of all forests to the next age class, it would result in an additional **`r ten.old`** tons of carbon sequestered in `r params$stateText `’s forests.  
+
+* If the state moved **25%** of all forests to the next age class, it would result in an additional **`r twenty.five.old`** tons of carbon sequestered in `r params$stateText `’s forests.  
+
+* If the state moved **50%** of all forests to the next age class, it would result in an additional **`r fifty.old`** tons of carbon sequestered in `r params$stateText `’s forests.  
+
+```{r echo= FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+#if user selects that they are a scientist, show explanation of how the carbon values are calculated
+if (params$user== "Scientist"){
+  cat("*The above values were calculated by generating a linear model of tons of", "\n", "carbon stored based on forest acreage and age in the state. This model", "\n", "was then used to predict how much more carbon would be stored if x", "\n", "percent of each forest age class were moved to the next age class.")
+}
+```
+
 ### Letting Forests Regenerate Naturally
 
 **WHY**  
 Although planting trees does regenerate the area more quickly, there are lasting effects from those plantings that are seen in carbon sequestration. On average, natural forests in `r params$stateText ` store `r additional` additional tons of carbon per acre than artificially regenerated forests. This means that a naturally regenerated forest stand will, as a rule, store more carbon than an artificially regenerated (planted) stand. Beyond carbon benefits, natural regeneration also reduces the amount of pesticides, soil impaction, and water runoff that can occur after a forest harvest. 
+```{r}
+#function to calculate how much more carbon on average would be stored if a user inputted percentage of all forests were naturally generated instead of artificially planted
+letForestsRegenerate<- function(percentage){
+  model.data2<- subset(state.data, Stand_Origin!= "Total") %>% na.omit() #exclude Stand_Origin total values and omit NAs
+  decimal<- as.numeric(percentage/100)
+  avg<- mean(model.data2$tC_ac[model.data2$Stand_Origin== "Natural"]) #find average FCI of Natural Stands
+  #find total acreage of planted forests
+  acreage<- subset(state.data, Stand_Origin=="Planted" & Stand_Age=="Total" & Forest.type.group=="Total")[,"ac"] 
+  format(round(avg*acreage*decimal, 0), big.mark=",")
+}
+
+#use the letForestsRegenerate function to calculate how much more carbon would be stored for 10, 25, and 50 % of forests moved to the next age class
+ten.natural<- letForestsRegenerate(10)
+twenty.five.natural<- letForestsRegenerate(25)
+fifty.natural<-  letForestsRegenerate(50)
+```
 
 **THE PAYOFF**
 Although we cannot choose individual acres, we can see the potential carbon sequestration difference if more acres were naturally instead of artificially regenerated.  
 
-* If the state had 10% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
+* If the state had **10%** more naturally regenerated forests, its forests would sequester, on average, **`r ten.natural`** more tons of carbon.  
 
-* If the state had 25% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
+* If the state had **25%** more naturally regenerated forests, its forests would sequester, on average, **`r twenty.five.natural`** more tons of carbon.  
 
-* If the state had 50% more naturally regenerated forests, its forests would sequester <<CALC>> more tons of carbon.  
+* If the state had **50%** more naturally regenerated forests, its forests would sequester, on average, **`r fifty.natural`** more tons of carbon.  
 
-```{r echo= FALSE}
-#Interactive Table: Current State, Value: Carbon, Row: Forest Type Group, Col: Stand Origin
-#	Percentage slider 0-100. Takes X % of artificial and changes it to natural.
-
-#Flat Table For Report: Benchmarks of 10, 25, 50%, same table output
-
+```{r echo= FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+#if user selects that they are a scientist, show explanation of how the carbon values are calculated
+if (params$user== "Scientist"){
+  cat("*The above values were calculated by determining the average FCI of", "\n", "naturally generated forests in the state. This average FCI value was then", "\n", "multiplied by X percent of the total acreage of human-planted forests", "\n", "in the state to yield the total carbon that would be stored if that", "\n", "area of forest was naturally generated.")
+}
 ```
 
 
@@ -294,5 +395,22 @@ We are not legislators, however, we can envision a reduction in forest harvest t
 
 ## Next Steps & Resources 
 
-Do you want to act on this information, but you’re not sure where to go? We’ve got you covered! Here are some links…
+Do you want to act on this information, but you’re not sure where to go? We’ve got you covered! Here are some links.  
 
+* Read the [\textcolor{blue}{Carbon Canopy Report}][1] which discusses the use of forest carbon markets to incentivize forest protection  
+* Take the [\textcolor{blue}{Stand4Forests Pledge}][2] to join the movement of people advocating for forest protection
+
+Here is further reading about the importance of forest carbon sequestration:  
+
+* [\textcolor{blue}{Seeing the Forest: Nature's Solution to Climate Change}][3]
+* [\textcolor{blue}{Industry Impact on US Forests}][4]  
+\
+  
+*All data gathered from:* 
+  
+USDA Forest Service, Forest Inventory and Analysis Program. Forest Inventory EVALIDator web-application Version 1.8.0.01. St. Paul, MN: U.S. Department of Agriculture, Forest Service, Northern Research Station. Available only on internet: http://apps.fs.usda.gov/Evalidator/evalidator.jsp
+
+[1]: https://www.dogwoodalliance.org/wp-content/uploads/2017/08/CC-Lessons-Learned-Report-for-Web.pdf
+[2]: https://www.dogwoodalliance.org/actions/stand4forests/
+[3]: https://stand4forests.org/wp-content/uploads/2018/09/The-Climate-Plan.pdf 
+[4]: https://www.dogwoodalliance.org/wp-content/uploads/2018/08/Industry-Impacts-on-US-Forests.pdf 
